@@ -32,7 +32,7 @@ enum RequestType {
 }
 
 class Api {
-  static final String appVersion = "1.1.15";
+  static final String appVersion = "1.1.16";
   static final String _apiHost = "https://api.xitem.de";
 
   static final _storage = new FlutterSecureStorage();

@@ -25,7 +25,9 @@ class _CalendarListScreenState extends State<CalendarListScreen> {
     bool reloadCompleted = await UserController.loadAllCalendars();
 
     if (reloadCompleted) {
-      setState(() {});
+      if(super.mounted) {
+        setState(() {});
+      }
       _refreshController.refreshCompleted();
     } else {
       _refreshController.refreshFailed();

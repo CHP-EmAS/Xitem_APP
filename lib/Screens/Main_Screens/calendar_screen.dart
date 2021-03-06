@@ -1,4 +1,5 @@
 import 'package:de/Controllers/ApiController.dart';
+import 'package:de/Controllers/HolidayListController.dart';
 import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
@@ -11,15 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:table_calendar/table_calendar.dart';
-
-// Example holidays
-final Map<DateTime, List> _holidays = {
-  DateTime(2019, 1, 1): ['New Year\'s Day'],
-  DateTime(2019, 1, 6): ['Epiphany'],
-  DateTime(2019, 2, 14): ['Valentine\'s Day'],
-  DateTime(2019, 4, 21): ['Easter Sunday'],
-  DateTime(2019, 4, 22): ['Easter Monday'],
-};
 
 class SingleCalendarScreen extends StatefulWidget {
   SingleCalendarScreen(this._calendarID);
@@ -55,7 +47,11 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
   final List<CalendarMenuChoice> _calendarMenuChoices;
 
   Map<DateTime, List<dynamic>> _events = new Map<DateTime, List<dynamic>>();
+  Map<DateTime, List<dynamic>> _holidays = new Map<DateTime, List<dynamic>>();
+
   List<dynamic> _selectedEvents;
+  List<dynamic> _selectedHolidays;
+
   AnimationController _animationController;
   CalendarController _calendarController;
 
@@ -77,6 +73,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
     });
 
     _selectedEvents = [];
+    _selectedHolidays = [];
 
     _calendar.getUiEvents(_selectedDay.year, _selectedDay.month).then((list) {
       if (currentVisibleMonth.year == now.year && currentVisibleMonth.month == now.month) {
@@ -85,6 +82,20 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
           _selectedEvents = _events[_selectedDay] ?? [];
           _isLoadingEvents = false;
         });
+      }
+    });
+
+    HolidayController.loadedHolidays.forEach((holiday) {
+      DateTime holidayDate = DateTime(holiday.date.year, holiday.date.month, holiday.date.day);
+
+      if(!_holidays.containsKey(holidayDate)) {
+        _holidays[holidayDate] = new List<dynamic>();
+      }
+
+      _holidays[holidayDate].add(holiday.name);
+
+      if(holidayDate == _selectedDay) {
+        _selectedHolidays.add(holiday.name);
       }
     });
 
@@ -217,10 +228,13 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
     }
   }
 
-  void _onDaySelected(DateTime day, List<dynamic> events) async {
+  void _onDaySelected(DateTime day, List<dynamic> events, List<dynamic> holidays) async {
     setState(() {
       _selectedEvents = events;
+      _selectedHolidays = holidays;
     });
+
+    print(holidays.length);
   }
 
   Future<void> _onVisibleDaysChanged(DateTime first, DateTime last, CalendarFormat format) async {
@@ -419,7 +433,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
         },
       ),
       onDaySelected: (date, events, holidays) {
-        _onDaySelected(date, events);
+        _onDaySelected(date, events,holidays);
         _animationController.forward(from: 0.0);
       },
       onDayLongPressed: _onDayLongPress,
@@ -461,7 +475,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
       );
     }
 
-    if (_selectedEvents.length <= 0) {
+    if (_selectedEvents.length <= 0 && _selectedHolidays.length <= 0) {
       return Center(
         child: Text("Keine Events. Zum Erstellen + tippen"),
       );
@@ -471,110 +485,146 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
       behavior: CustomScrollBehavior(false, true),
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        children: _selectedEvents.map((event) {
-          bool _canEditThisEvent = _calendar.canEditEvents;
-
-          if (!_canEditThisEvent) {
-            if (_calendar.dynamicEventMap.containsKey(event.eventID)) {
-              if (UserController.user.userID == _calendar.dynamicEventMap[event.eventID].userID) {
-                _canEditThisEvent = true;
-              }
-            }
-          }
-
-          bool onlyTitle = (event.startTime == "" && event.endTime == "");
-          Widget tile;
-
-          if (onlyTitle) {
-            tile = ListTile(
-              visualDensity: VisualDensity.compact,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-              title: Text(event.title),
-              onTap: () {
-                EventPopup.showEventInformation(_calendar.id, event.eventID);
-              },
-            );
-          } else {
-            String subTitle = "";
-
-            if (event.startTime == "")
-              subTitle = event.endTime;
-            else if (event.endTime == "")
-              subTitle = event.startTime;
-            else
-              subTitle = event.startTime + "\n" + event.endTime;
-
-            tile = ListTile(
-              visualDensity: VisualDensity.compact,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-              title: Text(event.title),
-              subtitle: Text(subTitle),
-              isThreeLine: (event.startTime == "" || event.endTime == "") ? false : true,
-              onTap: () {
-                EventPopup.showEventInformation(_calendar.id, event.eventID);
-              },
-            );
-          }
-
-          return Slidable(
-            enabled: true,
-            actionPane: SlidableDrawerActionPane(),
-            actionExtentRatio: 0.20,
-            child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-              elevation: 3,
-              color: ThemeController.activeTheme().cardColor,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: event.color,
-                      width: 3,
-                    ),
-                  ),
-                ),
-                child: tile,
-              ),
-            ),
-            actions: <Widget>[
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 4),
-                child: IconSlideAction(
-                  caption: 'Teilen',
-                  color: Colors.indigo,
-                  icon: Icons.share,
-                  onTap: () => null,
-                ),
-              ),
-            ],
-            secondaryActions: _canEditThisEvent
-                ? <Widget>[
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: IconSlideAction(
-                        caption: 'Bearbeiten',
-                        color: Colors.grey,
-                        foregroundColor: Colors.white,
-                        icon: Icons.edit,
-                        onTap: () => _editEvent(event.eventID),
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                      child: IconSlideAction(
-                        caption: 'Löschen',
-                        color: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        onTap: () => _deleteEvent(event.eventID),
-                      ),
-                    ),
-                  ]
-                : [],
-          );
-        }).toList(),
+        children: _buildEventTileList()..addAll(_buildHolidayTileList()),
       ),
     );
+  }
+
+  List<Widget> _buildEventTileList() {
+    return _selectedEvents.map((event) {
+      bool _canEditThisEvent = _calendar.canEditEvents;
+
+      if (!_canEditThisEvent) {
+        if (_calendar.dynamicEventMap.containsKey(event.eventID)) {
+          if (UserController.user.userID == _calendar.dynamicEventMap[event.eventID].userID) {
+            _canEditThisEvent = true;
+          }
+        }
+      }
+
+      bool onlyTitle = (event.startTime == "" && event.endTime == "");
+      Widget tile;
+
+      if (onlyTitle) {
+        tile = ListTile(
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Text(event.title),
+          onTap: () {
+            EventPopup.showEventInformation(_calendar.id, event.eventID);
+          },
+        );
+      } else {
+        String subTitle = "";
+
+        if (event.startTime == "")
+          subTitle = event.endTime;
+        else if (event.endTime == "")
+          subTitle = event.startTime;
+        else
+          subTitle = event.startTime + "\n" + event.endTime;
+
+        tile = ListTile(
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Text(event.title),
+          subtitle: Text(subTitle),
+          isThreeLine: (event.startTime == "" || event.endTime == "") ? false : true,
+          onTap: () {
+            EventPopup.showEventInformation(_calendar.id, event.eventID);
+          },
+        );
+      }
+
+      return Slidable(
+        enabled: true,
+        actionPane: SlidableDrawerActionPane(),
+        actionExtentRatio: 0.20,
+        child: Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          elevation: 3,
+          color: ThemeController.activeTheme().cardColor,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: event.color,
+                  width: 3,
+                ),
+              ),
+            ),
+            child: tile,
+          ),
+        ),
+        actions: <Widget>[
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: IconSlideAction(
+              caption: 'Teilen',
+              color: Colors.indigo,
+              icon: Icons.share,
+              onTap: () => null,
+            ),
+          ),
+        ],
+        secondaryActions: _canEditThisEvent
+            ? <Widget>[
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: IconSlideAction(
+              caption: 'Bearbeiten',
+              color: Colors.grey,
+              foregroundColor: Colors.white,
+              icon: Icons.edit,
+              onTap: () => _editEvent(event.eventID),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            child: IconSlideAction(
+              caption: 'Löschen',
+              color: Colors.red,
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              onTap: () => _deleteEvent(event.eventID),
+            ),
+          ),
+        ] : [],
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildHolidayTileList() {
+    return _selectedHolidays.map((holiday) {
+      Widget tile = ListTile(
+        visualDensity: VisualDensity.compact,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Text(holiday),
+        subtitle: Text("Feiertag"),
+      );
+
+      return Slidable(
+          enabled: false,
+          actionPane: SlidableDrawerActionPane(),
+          actionExtentRatio: 0.20,
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            elevation: 3,
+            color: ThemeController.activeTheme().cardColor,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: Color(0xFFF44336),
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: tile,
+            ),
+          )
+      );
+    }).toList();
   }
 }
 

@@ -47,6 +47,11 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void refreshState() {
     setState(() {
       EventListController.generateEventList();
@@ -57,9 +62,11 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
     bool reloadCompleted = await UserController.loadAllCalendars();
 
     if (reloadCompleted) {
-      setState(() {
-        EventListController.generateEventList();
-      });
+      if(super.mounted) {
+        setState(() {
+          EventListController.generateEventList();
+        });
+      }
       _refreshController.refreshCompleted();
     } else {
       _refreshController.refreshFailed();

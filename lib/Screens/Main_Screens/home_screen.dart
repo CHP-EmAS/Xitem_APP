@@ -86,9 +86,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (choice.menuStatus == appMenuStatus.LOGOUT) {
       UserController.logout();
     } else if (choice.menuStatus == appMenuStatus.PROFILE) {
-      _navigationService.pushNamed("/profile");
+      _navigationService.pushNamed("/profile").then((_) => setState(() {}));
     } else if (choice.menuStatus == appMenuStatus.SETTINGS) {
-      _navigationService.pushNamed("/settings").then((value) => setState(() {
+      _navigationService.pushNamed("/settings").then((_) => setState(() {
         _currentEventListWidget.refreshState();
         _holidayList.refreshState();
       }));
