@@ -8,7 +8,7 @@ import 'package:de/Models/Calendar.dart';
 import 'package:de/Models/Member.dart';
 import 'package:de/Models/User.dart';
 import 'package:de/Settings/custom_scroll_behavior.dart';
-import 'package:de/Settings/locator.dart';
+import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Widgets/icon_picker_widget.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';

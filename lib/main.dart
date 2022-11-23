@@ -4,15 +4,15 @@ import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Screens/Main_Screens/calendar_notes_and_votes_screen.dart';
 import 'package:de/Screens/Main_Screens/calendar_screen.dart';
 import 'package:de/Screens/Main_Screens/calendar_settings_screen.dart';
-import 'package:de/Screens/Main_Screens/home_screen.dart';
-import 'package:de/Screens/Main_Screens/login_screen.dart';
+import 'package:de/Screens/Main_Screens/HomePage.dart';
+import 'package:de/Screens/Main_Screens/LoginPage.dart';
 import 'package:de/Screens/Main_Screens/new_calendar_screen.dart';
 import 'package:de/Screens/Main_Screens/profile_edit_screen.dart';
 import 'package:de/Screens/Main_Screens/profile_screen.dart';
-import 'package:de/Screens/Main_Screens/register_screen.dart';
+import 'package:de/Screens/Main_Screens/RegisterPage.dart';
 import 'package:de/Screens/Main_Screens/settings_screen.dart';
-import 'package:de/Screens/Main_Screens/startUp_screen.dart';
-import 'package:de/Settings/locator.dart';
+import 'package:de/Screens/Main_Screens/StartUpPage.dart';
+import 'package:de/Utils/RouteGenerator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -66,22 +66,7 @@ class _XitemState extends State<Xitem> {
         supportedLocales: [
           const Locale('de', 'DE'),
         ],
-        navigatorKey: locator<NavigationService>().navigatorKey,
-        home: StartUpScreen(),
-        routes: <String, WidgetBuilder>{
-          '/startup': (BuildContext context) => new StartUpScreen(),
-          '/login': (BuildContext context) => new LoginScreen(),
-          '/register': (BuildContext context) => new RegisterScreen(),
-          '/home': (BuildContext context) => new HomeScreen(1),
-          '/home/calendar': (BuildContext context) => new HomeScreen(0),
-          '/calendar': (BuildContext context) => new SingleCalendarScreen(ModalRoute.of(context).settings.arguments),
-          '/calendarSettings': (BuildContext context) => new CalendarSettingsScreen(ModalRoute.of(context).settings.arguments),
-          '/calendarNotesAndVotes': (BuildContext context) => new CalendarNotesAndVotesScreen(ModalRoute.of(context).settings.arguments),
-          '/profile': (BuildContext context) => new ProfileScreen(),
-          '/editProfile': (BuildContext context) => new EditProfileScreen(),
-          '/createCalendar': (BuildContext context) => new NewCalendarScreen(),
-          '/settings': (BuildContext context) => new SettingsScreen(),
-        },
+        onGenerateRoute: RouteGenerator.generateRoute,
       ),
     );
   }

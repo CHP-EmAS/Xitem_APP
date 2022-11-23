@@ -6,7 +6,6 @@ import 'package:de/Models/Calendar.dart';
 import 'package:de/Models/Note.dart';
 import 'package:de/Models/Voting.dart';
 import 'package:de/Settings/custom_scroll_behavior.dart';
-import 'package:de/Settings/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/note_popups.dart';
 import 'package:de/Widgets/Dialogs/voting_popups.dart';
@@ -107,7 +106,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
         bool success = await _calendar.vote(voting.votingID, votes).catchError((e) {
           Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-          return;
+          return false;
         });
 
         await Future.delayed(const Duration(seconds: 1));
@@ -137,7 +136,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
       bool success = await _calendar.removeVoting(votingToDelete.votingID).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));
@@ -162,7 +161,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
     bool success = await _calendar.createVoting(votingData.title, votingData.multipleChoice, votingData.abstentionAllowed, votingData.choices).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-      return;
+      return false;
     });
 
     await Future.delayed(const Duration(seconds: 1));
@@ -188,7 +187,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
     bool success = await _calendar.createNote(noteData.title, noteData.content, noteData.pinned, noteData.color).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-      return;
+      return false;
     });
 
     await Future.delayed(const Duration(seconds: 1));
@@ -424,7 +423,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
     bool success = await _calendar.changeNote(note.noteID, noteData.title, noteData.content, noteData.pinned, noteData.color).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-      return;
+      return false;
     });
 
     await Future.delayed(const Duration(seconds: 1));
@@ -452,7 +451,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
       bool success = await _calendar.removeNote(note.noteID).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));
@@ -475,7 +474,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
     return _tabController.index == 0
 
         //Notiz Action Button
-        ? FloatingActionButton(
+        ? (_calendar.canCreateEvents ? FloatingActionButton(
             tooltip: "Notiz erstellen",
             child: Icon(
               Icons.sticky_note_2_rounded,
@@ -486,7 +485,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
             onPressed: () {
               _createNote();
             },
-          )
+          ) : Center())
 
         //Abstimmung Action Button
         : (_calendar.isOwner

@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 // ignore: must_be_immutable
-class HolidayListScreen extends StatefulWidget {
-  _HolidayListScreenState hlss;
+class HolidayListSubPage extends StatefulWidget {
+  _HolidayListSubPageState hlss;
 
   refreshState() {
     if(hlss.mounted)
@@ -20,15 +20,15 @@ class HolidayListScreen extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    hlss = _HolidayListScreenState();
+    hlss = _HolidayListSubPageState();
     return hlss;
   }
 }
 
-class _HolidayListScreenState extends State<HolidayListScreen> {
-  List<BirthdayEntry> _birthdayUserList = new List<BirthdayEntry>();
+class _HolidayListSubPageState extends State<HolidayListSubPage> {
 
-  DateFormat _dateOnlyFormatWithYear = new DateFormat.yMMMMEEEEd('de_DE');
+  final List<BirthdayEntry> _birthdayUserList = [];
+  final DateFormat _dateOnlyFormatWithYear = new DateFormat.yMMMMEEEEd('de_DE');
 
   @override
   void initState() {

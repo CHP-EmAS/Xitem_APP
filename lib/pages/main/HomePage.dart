@@ -1,36 +1,28 @@
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'package:de/Screens/Sub_Screens/calendar_list_screen.dart';
-import 'package:de/Screens/Sub_Screens/current_event_list_screen.dart';
-import 'package:de/Screens/Sub_Screens/holiday_screen.dart';
-import 'package:de/Settings/locator.dart';
 import 'package:de/Widgets/Dialogs/event_popups.dart';
+import 'package:de/pages/sub/CalendarListSubPage.dart';
+import 'package:de/pages/sub/EventListSubPage.dart';
+import 'package:de/pages/sub/HolidayListSubPage.dart';
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen(this._startIndex);
+class HomePage extends StatefulWidget {
+  const HomePage(this._startIndex);
 
   final int _startIndex;
 
   @override
-  _HomeScreenState createState() => _HomeScreenState(_startIndex);
+  _HomePageState createState() => _HomePageState(_startIndex);
 }
 
-enum appMenuStatus { LOGOUT, SETTINGS, PROFILE }
-
-enum appBottomBarStatus { EVENTS, KALENDARS, HOLIDAYS }
-
-class _HomeScreenState extends State<HomeScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
+class _HomePageState extends State<HomePage> {
   int _selectedIndex;
 
-  CurrentEventListScreen _currentEventListWidget;
-  CalendarListScreen _calendarList;
-  HolidayListScreen _holidayList;
+  EventListSubPage _currentEventListWidget;
+  CalendarListSubPage _calendarList;
+  HolidayListSubPage _holidayList;
 
-  _HomeScreenState(_startIndex) {
+  _HomePageState(_startIndex) {
     this._selectedIndex = _startIndex;
   }
 
@@ -38,41 +30,41 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    _currentEventListWidget = CurrentEventListScreen();
-    _calendarList = CalendarListScreen();
-    _holidayList = HolidayListScreen();
+    _currentEventListWidget = new EventListSubPage();
+    _calendarList = new CalendarListSubPage();
+    _holidayList = new HolidayListSubPage();
   }
 
-  static const List<AppMenuChoice> _menuChoices = const <AppMenuChoice>[
-    const AppMenuChoice(menuStatus: appMenuStatus.PROFILE, title: 'Account', icon: Icons.account_circle),
-    const AppMenuChoice(menuStatus: appMenuStatus.SETTINGS, title: 'Einstellungen', icon: Icons.settings),
-    const AppMenuChoice(menuStatus: appMenuStatus.LOGOUT, title: 'Abmelden', icon: Icons.exit_to_app),
+  static final List<AppMenuChoice> _menuChoices = <AppMenuChoice>[
+    const AppMenuChoice(menuStatus: AppMenuStatus.PROFILE, title: 'Account', icon: Icons.account_circle),
+    const AppMenuChoice(menuStatus: AppMenuStatus.SETTINGS, title: 'Einstellungen', icon: Icons.settings),
+    const AppMenuChoice(menuStatus: AppMenuStatus.LOGOUT, title: 'Abmelden', icon: Icons.exit_to_app),
   ];
 
-  static List<NavigationItem> _widgetOptions = <NavigationItem>[
+  static final List<NavigationItem> _widgetOptions = <NavigationItem>[
     NavigationItem(
-      menuStatus: appBottomBarStatus.KALENDARS,
+      menuStatus: AppBottomBarStatus.CALENDARS,
       appbarTitle: "Deine Kalender",
-      bottombarIcon: Icons.event,
-      bottombarText: "Kalender",
+      bottomBarIcon: Icons.event,
+      bottomBarText: "Kalender",
       actionHintText: "Kalender hinzufügen",
       actionIcon: Icons.fiber_new_outlined,
     ),
     NavigationItem(
-      menuStatus: appBottomBarStatus.EVENTS,
+      menuStatus: AppBottomBarStatus.EVENTS,
       appbarTitle: "Anstehende Events",
-      bottombarIcon: Icons.home,
-      bottombarText: "Home",
+      bottomBarIcon: Icons.home,
+      bottomBarText: "Home",
       actionHintText: "Event hinzufügen",
       actionIcon: Icons.add,
     ),
     NavigationItem(
-      menuStatus: appBottomBarStatus.HOLIDAYS,
+      menuStatus: AppBottomBarStatus.HOLIDAYS,
       appbarTitle: "Feiertage",
-      bottombarIcon: Icons.star,
-      bottombarText: "Feiertage",
-      actionHintText: "",
-      actionIcon: Icons.star,
+      bottomBarIcon: Icons.star,
+      bottomBarText: "Feiertage",
+      actionHintText: "Geburtstag hinzufügen",
+      actionIcon: Icons.cake,
     ),
   ];
 
@@ -83,12 +75,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _selectMenuChoice(AppMenuChoice choice) {
-    if (choice.menuStatus == appMenuStatus.LOGOUT) {
+    if (choice.menuStatus == AppMenuStatus.LOGOUT) {
       UserController.logout();
-    } else if (choice.menuStatus == appMenuStatus.PROFILE) {
-      _navigationService.pushNamed("/profile").then((_) => setState(() {}));
-    } else if (choice.menuStatus == appMenuStatus.SETTINGS) {
-      _navigationService.pushNamed("/settings").then((_) => setState(() {
+    } else if (choice.menuStatus == AppMenuStatus.PROFILE) {
+      Navigator.pushNamed(context, "/profile").then((_) => setState(() {}));
+    } else if (choice.menuStatus == AppMenuStatus.SETTINGS) {
+      Navigator.pushNamed(context, "/settings").then((_) => setState(() {
         _currentEventListWidget.refreshState();
         _holidayList.refreshState();
       }));
@@ -97,13 +89,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget buildBody() {
     switch (_widgetOptions.elementAt(_selectedIndex).menuStatus) {
-      case appBottomBarStatus.EVENTS:
+      case AppBottomBarStatus.EVENTS:
         return _currentEventListWidget;
         break;
-      case appBottomBarStatus.KALENDARS:
+      case AppBottomBarStatus.CALENDARS:
         return _calendarList;
         break;
-      case appBottomBarStatus.HOLIDAYS:
+      case AppBottomBarStatus.HOLIDAYS:
         return _holidayList;
         break;
       default:
@@ -167,16 +159,16 @@ class _HomeScreenState extends State<HomeScreen> {
         child: BottomNavigationBar(
           items: <BottomNavigationBarItem>[
             BottomNavigationBarItem(
-              icon: Icon(_widgetOptions[0].bottombarIcon),
-              label: _widgetOptions[0].bottombarText,
+              icon: Icon(_widgetOptions[0].bottomBarIcon),
+              label: _widgetOptions[0].bottomBarText,
             ),
             BottomNavigationBarItem(
-              icon: Icon(_widgetOptions[1].bottombarIcon),
-              label: _widgetOptions[1].bottombarText,
+              icon: Icon(_widgetOptions[1].bottomBarIcon),
+              label: _widgetOptions[1].bottomBarText,
             ),
             BottomNavigationBarItem(
-              icon: Icon(_widgetOptions[2].bottombarIcon),
-              label: _widgetOptions[2].bottombarText,
+              icon: Icon(_widgetOptions[2].bottomBarIcon),
+              label: _widgetOptions[2].bottomBarText,
             ),
           ],
           currentIndex: _selectedIndex,
@@ -186,30 +178,10 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: _onItemTapped,
         ),
       ),
-      floatingActionButton: _widgetOptions.elementAt(_selectedIndex).menuStatus == appBottomBarStatus.HOLIDAYS
+      floatingActionButton: _widgetOptions.elementAt(_selectedIndex).menuStatus == AppBottomBarStatus.HOLIDAYS
           ? Center()
           : FloatingActionButton(
-              onPressed: () async {
-                if (_widgetOptions.elementAt(_selectedIndex).menuStatus == appBottomBarStatus.KALENDARS) {
-                  await _navigationService.pushNamed('/createCalendar');
-                } else if (_widgetOptions.elementAt(_selectedIndex).menuStatus == appBottomBarStatus.EVENTS) {
-                  var keyList = UserController.calendarList.keys.toList();
-
-                  if (keyList.isNotEmpty) {
-                    EventData newEvent = await EventPopup.showEventSettingDialog(
-                      keyList[0],
-                      initTime: DateTime.now(),
-                      calendarChangeable: true,
-                    );
-
-                    if (newEvent != null) {
-                      _currentEventListWidget.addEvent(newEvent);
-                    }
-                  } else {
-                    await _navigationService.pushNamed('/createCalendar');
-                  }
-                }
-              },
+              onPressed: _floatingActionButtonPressed,
               backgroundColor: ThemeController.activeTheme().actionButtonColor,
               tooltip: _widgetOptions.elementAt(_selectedIndex).actionHintText,
               child: Icon(
@@ -221,16 +193,38 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
+
+  void _floatingActionButtonPressed() async {
+    if (_widgetOptions.elementAt(_selectedIndex).menuStatus == AppBottomBarStatus.CALENDARS) {
+      await Navigator.pushNamed(context, '/createCalendar');
+    } else if (_widgetOptions.elementAt(_selectedIndex).menuStatus == AppBottomBarStatus.EVENTS) {
+      var keyList = UserController.calendarList.keys.toList();
+
+      if (keyList.isNotEmpty) {
+        EventData newEvent = await EventPopup.showEventSettingDialog(
+          keyList[0],
+          initTime: DateTime.now(),
+          calendarChangeable: true,
+        );
+
+        if (newEvent != null) {
+          _currentEventListWidget.addEvent(newEvent);
+        }
+      } else {
+        await Navigator.pushNamed(context, '/createCalendar');
+      }
+    }
+  }
 }
 
 class NavigationItem {
-  NavigationItem({this.menuStatus, this.appbarTitle, this.bottombarIcon, this.bottombarText, this.actionHintText, this.actionIcon});
+  NavigationItem({this.menuStatus, this.appbarTitle, this.bottomBarIcon, this.bottomBarText, this.actionHintText, this.actionIcon});
 
-  final appBottomBarStatus menuStatus;
+  final AppBottomBarStatus menuStatus;
   final String appbarTitle;
 
-  final IconData bottombarIcon;
-  final String bottombarText;
+  final IconData bottomBarIcon;
+  final String bottomBarText;
 
   final String actionHintText;
   final IconData actionIcon;
@@ -239,7 +233,11 @@ class NavigationItem {
 class AppMenuChoice {
   const AppMenuChoice({this.menuStatus, this.title, this.icon});
 
-  final appMenuStatus menuStatus;
+  final AppMenuStatus menuStatus;
   final String title;
   final IconData icon;
 }
+
+enum AppMenuStatus { LOGOUT, SETTINGS, PROFILE }
+enum AppBottomBarStatus { EVENTS, CALENDARS, HOLIDAYS }
+

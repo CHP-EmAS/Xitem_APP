@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:crypto/crypto.dart';
 import 'package:de/Controllers/HolidayListController.dart';
@@ -16,10 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:image/image.dart' as Image;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:image/image.dart' as Image;
 
 import 'UserController.dart';
 
@@ -1546,28 +1547,35 @@ class Api {
   //Http functions
   static Future<Response> _sendRequest(String relativeURL, RequestType type,
       [ApiRequestData requestData, Map<String, String> optionalHeaders, bool includeAuthToken = false, bool includeSecurityToken = false]) async {
+
+    //log request
     print("[" + type.toString() + "] > " + relativeURL);
 
     String jsonRequestData = "";
 
+    //convert request data to JSON String for the request body
     if (requestData != null) {
       jsonRequestData = jsonEncode(requestData.toJson());
     }
 
     Map<String, String> headers = {"Content-type": "application/json"};
 
+    //include auth token if requested
     if (includeAuthToken) {
       String authToken = await _storage.read(key: "auth-token");
       headers["auth-token"] = authToken;
     }
 
+    //include security token if requested, this token must be requested in advance
     if (includeSecurityToken) {
       String securityToken = await getSecurityToken();
       headers["security-token"] = securityToken;
     }
 
+    //add other headers if needed
     if (optionalHeaders != null) headers.addAll(optionalHeaders);
 
+    //execute request
     Response response;
     switch (type) {
       case RequestType.GET:
@@ -1587,9 +1595,11 @@ class Api {
         break;
     }
 
+    //On Error
     if (response.statusCode >= 400 && response.statusCode <= 600) {
       Map<String, dynamic> responseData;
 
+      //decode response form JSON to Object
       try {
         responseData = jsonDecode(response.body);
       } catch (error) {
@@ -1598,14 +1608,19 @@ class Api {
         return response;
       }
 
+      //print error
       print(response.body.toString());
 
+      //get error code form response
       if (responseData.containsKey("Error")) {
         errorCode = responseData["Error"] as String;
       } else {
         errorCode = "";
       }
 
+      //If the Auth token has expired, an attempt is made to renew it.
+      // If the renewal was successful, the request is recursively executed again,
+      // if not, the user is logged out because it can no longer be authenticated.
       if (errorCode == "expired_token") {
         bool refreshSuccess = await refreshToken();
         if (refreshSuccess) {
@@ -1616,6 +1631,9 @@ class Api {
           }
         }
       } else {
+
+        //If the user can no longer be authenticated,
+        //he is logged out with an appropriate error message.
         bool logout = false;
 
         switch (errorCode) {
@@ -1644,6 +1662,7 @@ class Api {
       errorCode = "";
     }
 
+    //return response for further processing
     return response;
   }
 }

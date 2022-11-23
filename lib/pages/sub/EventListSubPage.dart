@@ -1,13 +1,11 @@
 import 'package:de/Controllers/ApiController.dart';
 import 'package:de/Controllers/EventListController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
 import 'package:de/Models/Calendar.dart';
 import 'package:de/Models/Event.dart';
 import 'package:de/Models/Voting.dart';
 import 'package:de/Settings/custom_scroll_behavior.dart';
-import 'package:de/Settings/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/event_popups.dart';
 import 'package:de/Widgets/Dialogs/voting_popups.dart';
@@ -17,8 +15,8 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 // ignore: must_be_immutable
-class CurrentEventListScreen extends StatefulWidget {
-  CurrentEventListScreenState cels;
+class EventListSubPage extends StatefulWidget {
+  EventListSubPageState cels;
 
   addEvent(EventData event) {
     cels.addEvent(event);
@@ -31,15 +29,15 @@ class CurrentEventListScreen extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    cels = CurrentEventListScreenState();
+    cels = EventListSubPageState();
     return cels;
   }
 }
 
-class CurrentEventListScreenState extends State<CurrentEventListScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
+class EventListSubPageState extends State<EventListSubPage> {
+
+  final RefreshController _refreshController = RefreshController(initialRefresh: false);
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
-  RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -85,7 +83,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
 
     bool success = await selectedCalendar.createEvent(newEvent).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-      return;
+      return false;
     });
 
     await Future.delayed(const Duration(seconds: 1));
@@ -115,7 +113,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
           .editEvent(eventToEdit.eventID, editedEvent.startDate, editedEvent.endDate, editedEvent.title, editedEvent.description, editedEvent.daylong, editedEvent.color)
           .catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));
@@ -143,7 +141,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
 
       bool success = await _calendar.removeEvent(eventToDelete.eventID).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));
@@ -172,7 +170,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
 
         bool success = await _calendar.vote(voting.votingID, votes).catchError((e) {
           Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-          return;
+          return false;
         });
 
         await Future.delayed(const Duration(seconds: 1));
@@ -201,7 +199,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
 
       bool success = await _calendar.removeVoting(votingToDelete.votingID).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));
@@ -260,7 +258,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
             color: _calendar.color,
           ),
           onPressed: () {
-            _navigationService.pushNamed('/calendar', arguments: _calendar.id).then((value) => {
+            Navigator.pushNamed(context, '/calendar', arguments: _calendar.id).then((value) => {
                   setState(() {
                     EventListController.generateEventList();
                   })
@@ -354,7 +352,7 @@ class CurrentEventListScreenState extends State<CurrentEventListScreen> {
             color: _calendar.color,
           ),
           onPressed: () {
-            _navigationService.pushNamed('/calendar', arguments: _calendar.id).then((value) => {
+            Navigator.pushNamed(context, '/calendar', arguments: _calendar.id).then((value) => {
                   setState(() {
                     EventListController.generateEventList();
                   })

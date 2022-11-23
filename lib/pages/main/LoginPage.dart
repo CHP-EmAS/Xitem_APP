@@ -1,24 +1,18 @@
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'package:de/Settings/locator.dart';
 import 'package:de/Widgets/Buttons/loading_button_widget.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    return _LoginScreenState();
+    return _LoginPageState();
   }
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
-  TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
-
+class _LoginPageState extends State<LoginPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
@@ -41,6 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+
     final emailField = TextField(
       obscureText: false,
       style: style,
@@ -69,21 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Widget forgetPasswordText() {
       if (_wrongLogin) {
-        return FlatButton(
-          splashColor: Colors.transparent,
-          onPressed: () async {
-            if (_lastTryEmail != "") {
-              ConfirmAction answer = await DialogPopup.asyncConfirmDialog("Passwort zurücksetzen", "Möchtest du einen Wiederherstellungscode an\n" + _lastTryEmail + "\nsenden.");
-
-              if (answer == ConfirmAction.OK) {
-                if (await Api.sendPasswordEmail(_lastTryEmail)) {
-                  await DialogPopup.asyncOkDialog("E-Mail gesendet", "Wenn diese E-Mail in unserem System hinterlegt ist, wurde ein Wiederherstellungscode gesendet.");
-                } else {
-                  await DialogPopup.asyncOkDialog("E-Mail nicht gesendet", "Es ist ein Fehler aufgetreten, versuch es später erneut.");
-                }
-              }
-            }
-          },
+        return TextButton(
+          onPressed: () => _forgotPasswordClick,
           child: Text(
             'Passwort vergessen?',
             style: TextStyle(
@@ -129,23 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
               forgetPasswordText(),
               SizedBox(height: 25.0),
               Container(
-                child: LoadingButton("Anmelden", "Anmelden", Colors.amber, () async {
-                  if (_email.text == "" || _password.text == "") return false;
-
-                  return await UserController.login(_email.text, _password.text).then((loginSuccess) {
-                    if (loginSuccess) {
-                      _navigationService.popAndPushNamed('/startup');
-                      return true;
-                    } else {
-                      setState(() {
-                        _errorMessage = Api.errorMessage;
-                        _lastTryEmail = _email.text;
-                        _wrongLogin = true;
-                      });
-                      return false;
-                    }
-                  });
-                }),
+                child: LoadingButton("Anmelden", "Anmelden", Colors.amber, _loginClick),
               ),
               Container(
                   child: Row(
@@ -155,19 +122,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16),
                   ),
-                  FlatButton(
-                    splashColor: Colors.transparent,
-                    textColor: Colors.blueAccent,
+                  TextButton(
                     child: Text(
                       'Registrieren',
                       style: TextStyle(
+                        color: Colors.blueAccent,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
                     ),
                     onPressed: () {
-                      _navigationService.pushNamed('/register');
+                      Navigator.pushNamed(context, '/register');
                     },
                   )
                 ],
@@ -184,5 +150,37 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _loginClick() async {
+    if (_email.text == "" || _password.text == "") return false;
+
+    return await UserController.login(_email.text, _password.text).then((loginSuccess) {
+      if (loginSuccess) {
+        Navigator.popAndPushNamed(context, '/startup');
+        return true;
+      } else {
+        setState(() {
+          _errorMessage = Api.errorMessage;
+          _lastTryEmail = _email.text;
+          _wrongLogin = true;
+        });
+        return false;
+      }
+    });
+  }
+
+  void _forgotPasswordClick() async {
+    if (_lastTryEmail != "") {
+      ConfirmAction answer = await DialogPopup.asyncConfirmDialog("Passwort zurücksetzen", "Möchtest du einen Wiederherstellungscode an\n" + _lastTryEmail + "\nsenden.");
+
+      if (answer == ConfirmAction.OK) {
+        if (await Api.sendPasswordEmail(_lastTryEmail)) {
+          await DialogPopup.asyncOkDialog("E-Mail gesendet", "Wenn diese E-Mail in unserem System hinterlegt ist, wurde ein Wiederherstellungscode gesendet.");
+        } else {
+          await DialogPopup.asyncOkDialog("E-Mail nicht gesendet", "Es ist ein Fehler aufgetreten, versuch es später erneut.");
+        }
+      }
+    }
   }
 }

@@ -1,8 +1,6 @@
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Interfaces/api_interfaces.dart';
-import 'package:de/Settings/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +14,6 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
-  TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
-
   final _email = TextEditingController();
   final _name = TextEditingController();
 
@@ -28,25 +22,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   DateTime _birthday;
 
   String _errorMessage = "";
-
-  Future<Null> _selectDate(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
-        context: context,
-        errorFormatText: "Ungültiges Format",
-        helpText: "Geburtstag auswählen",
-        initialDatePickerMode: DatePickerMode.year,
-        useRootNavigator: false,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(1901, 1),
-        lastDate: DateTime.now(),
-        locale: Locale('de', 'DE'));
-    if (picked != null && picked != _birthday) {
-      _birthday = picked;
-      setState(() {
-        _birthdayText.text = birthdayFormat.format(picked);
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -59,6 +34,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+
     final emailField = TextField(
       obscureText: false,
       style: style,
@@ -109,24 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
 
-    final registerButton = LoadingButton("Registrieren", "Registriert", Colors.amber, () async {
-      if (_email.text == "" || _name.text == "") return false;
-
-      return await Api.register(UserRegistrationRequest(_email.text, _name.text, _birthday)).then((registerSuccess) async {
-        if (registerSuccess) {
-          await DialogPopup.asyncOkDialog("Bestätigungs E-Mail gesendet", "Bitte bestätigen sie ihre E-Mail Adresse, danach können sie sich anmelden.");
-
-          _navigationService.pop();
-
-          return true;
-        } else {
-          setState(() {
-            _errorMessage = Api.errorMessage;
-          });
-          return false;
-        }
-      });
-    });
+    final registerButton = LoadingButton("Registrieren", "Registriert", Colors.amber, _registerClick);
 
     return Scaffold(
       appBar: AppBar(
@@ -181,5 +141,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _registerClick() async {
+    if (_email.text == "" || _name.text == "") return false;
+
+    return await Api.register(UserRegistrationRequest(_email.text, _name.text, _birthday)).then((registerSuccess) async {
+      if (registerSuccess) {
+        await DialogPopup.asyncOkDialog("Bestätigungs E-Mail gesendet", "Bitte bestätigen sie ihre E-Mail Adresse, danach können sie sich anmelden.");
+
+        Navigator.pop(context);
+
+        return true;
+      } else {
+        setState(() {
+          _errorMessage = Api.errorMessage;
+        });
+        return false;
+      }
+    });
+  }
+
+  void _selectDate(BuildContext context) async {
+    final DateTime picked = await showDatePicker(
+        context: context,
+        errorFormatText: "Ungültiges Format",
+        helpText: "Geburtstag auswählen",
+        initialDatePickerMode: DatePickerMode.year,
+        useRootNavigator: false,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(1901, 1),
+        lastDate: DateTime.now(),
+        locale: Locale('de', 'DE'));
+    if (picked != null && picked != _birthday) {
+      _birthday = picked;
+      setState(() {
+        _birthdayText.text = birthdayFormat.format(picked);
+      });
+    }
   }
 }

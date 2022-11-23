@@ -5,7 +5,7 @@ import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
 import 'package:de/Interfaces/api_interfaces.dart';
-import 'package:de/Settings/locator.dart';
+import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
 import 'package:flutter/material.dart';
@@ -270,7 +270,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               if (_newAvatarImage != null) {
                                 bool success = await UserController.changeAvatar(_newAvatarImage).catchError((e) {
                                   Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-                                  return;
+                                  return false;
                                 });
 
                                 await Future.delayed(const Duration(seconds: 1));

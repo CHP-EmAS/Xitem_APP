@@ -4,7 +4,7 @@ import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/SettingController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'package:de/Settings/locator.dart';
+import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';
 import 'package:flutter/material.dart';
@@ -228,7 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
       bool success = await UserController.loadAllCalendars().catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));
@@ -256,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
       bool success = await HolidayController.loadPublicHolidays().catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-        return;
+        return false;
       });
 
       await Future.delayed(const Duration(seconds: 1));

@@ -3,7 +3,7 @@ import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Screens/Sub_Screens/create_calendar_screen.dart';
 import 'package:de/Screens/Sub_Screens/join_calendar_screen.dart';
 import 'package:de/Screens/Sub_Screens/join_calender_via_qr_code_screen.dart';
-import 'package:de/Settings/locator.dart';
+import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:flutter/material.dart';
 
 class NewCalendarScreen extends StatefulWidget {

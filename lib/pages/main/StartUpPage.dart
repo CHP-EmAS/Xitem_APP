@@ -1,21 +1,17 @@
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'package:de/Settings/locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-class StartUpScreen extends StatefulWidget {
+class StartUpPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    return _StartUpScreenState();
+    return _StartUpPageState();
   }
 }
 
-class _StartUpScreenState extends State<StartUpScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
+class _StartUpPageState extends State<StartUpPage> {
   String _message = "";
   bool _failedToStartUp = false;
 
@@ -38,9 +34,9 @@ class _StartUpScreenState extends State<StartUpScreen> {
             //loading User informations
             UserController.loadAllCalendars().then((success) {
               if (success) {
-                _navigationService.pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+                Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
               } else {
-                _navigationService.pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
               }
             }).catchError((error) {
               setState(() {
@@ -49,7 +45,7 @@ class _StartUpScreenState extends State<StartUpScreen> {
               });
             });
           } else {
-            _navigationService.pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+            Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
           }
         });
       } else {
