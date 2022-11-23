@@ -1,68 +1,15 @@
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/Models/User.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../Controllers/UserController.dart';
 
-class ProfileScreen extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() {
-    return _ProfileScreenState();
-  }
-}
+class ProfilePage extends StatelessWidget {
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
+  ProfilePage({Key key, @required this.appUser});
 
   final dateOnlyFormat = new DateFormat.yMMMMd('de_DE');
-
-  String _name = "-";
-  String _birthday = "-";
-  String _status = "-";
-  String _email = "-";
-  String _regAt = "-";
-
-  @override
-  void initState() {
-    if (UserController.user.name != null) {
-      _name = UserController.user.name;
-    }
-
-    if (UserController.user.birthday != null) {
-      _birthday = dateOnlyFormat.format(UserController.user.birthday);
-    }
-
-    if (UserController.user.role != null) {
-      _status = UserController.user.role;
-    }
-
-    if (UserController.user.email != null) {
-      _email = UserController.user.email;
-    }
-
-    if (UserController.user.registeredAt != null) {
-      _regAt = dateOnlyFormat.format(UserController.user.registeredAt);
-    }
-
-    super.initState();
-  }
-
-  void update() {
-    setState(() {
-      if (UserController.user.name != null) _name = UserController.user.name;
-      if (UserController.user.birthday != null) _birthday = dateOnlyFormat.format(UserController.user.birthday);
-      if (UserController.user.role != null) _status = UserController.user.role;
-      if (UserController.user.email != null) _email = UserController.user.email;
-      if (UserController.user.registeredAt != null) _regAt = dateOnlyFormat.format(UserController.user.registeredAt);
-    });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  final AppUser appUser;
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            _navigationService.pop();
+            Navigator.pop(context);
           },
         ),
         title: Text(
@@ -89,11 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           new IconButton(
             icon: Icon(Icons.settings, color: ThemeController.activeTheme().iconColor, size: 30),
             onPressed: () {
-              _navigationService.pushNamed('/editProfile').then((value) {
-                setState(() {
-                  update();
-                });
-              });
+              Navigator.pushNamed(context, '/editProfile');
             },
           ),
         ],
@@ -106,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: <Widget>[
             Center(
               child: CircleAvatar(
-                backgroundImage: FileImage(UserController.user.avatar),
+                backgroundImage: FileImage(appUser.avatar),
                 radius: 60,
               ),
             ),
@@ -121,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 5),
             Text(
-              _name,
+              appUser.name != null ? appUser.name : "-",
               style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, letterSpacing: 2, fontSize: 25, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
@@ -135,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 5),
             Text(
-              _birthday,
+              appUser.birthday != null ? dateOnlyFormat.format(appUser.birthday) : "-",
               style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, letterSpacing: 2, fontSize: 25, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
@@ -149,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 5),
             Text(
-              _status,
+              appUser.role != null ? appUser.role : "-",
               style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, letterSpacing: 2, fontSize: 25, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
@@ -160,7 +103,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: ThemeController.activeTheme().headlineColor,
                 ),
                 SizedBox(width: 10),
-                Text(_email, style: TextStyle(color: ThemeController.activeTheme().headlineColor, fontSize: 18, letterSpacing: 2))
+                Text(
+                    appUser.email != null ? appUser.email : "-",
+                    style: TextStyle(
+                        color: ThemeController.activeTheme().headlineColor,
+                        fontSize: 18,
+                        letterSpacing: 2
+                    )
+                )
               ],
             ),
             SizedBox(height: 10),
@@ -171,7 +121,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: ThemeController.activeTheme().headlineColor,
                 ),
                 SizedBox(width: 10),
-                Text(_regAt, style: TextStyle(color: ThemeController.activeTheme().headlineColor, fontSize: 18, letterSpacing: 2))
+                Text(
+                    appUser.registeredAt != null ? appUser.registeredAt : "-",
+                    style: TextStyle(
+                        color: ThemeController.activeTheme().headlineColor,
+                        fontSize: 18,
+                        letterSpacing: 2
+                    )
+                )
               ],
             ),
           ],

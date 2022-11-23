@@ -1,11 +1,9 @@
 import 'package:de/Controllers/ApiController.dart';
 import 'package:de/Controllers/HolidayListController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
 import 'package:de/Models/Calendar.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/Utils/custom_scroll_behavior.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/event_popups.dart';
 import 'package:flutter/material.dart';
@@ -13,38 +11,30 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-class SingleCalendarScreen extends StatefulWidget {
-  SingleCalendarScreen(this._calendarID);
+class CalendarPage extends StatefulWidget {
+  CalendarPage({Key key, @required this.linkedCalendar});
 
-  final String _calendarID;
+  final Calendar linkedCalendar;
 
   @override
-  _SingleCalendarScreenState createState() => _SingleCalendarScreenState(_calendarID);
+  _CalendarPageState createState() => _CalendarPageState();
 }
 
-class _SingleCalendarScreenState extends State<SingleCalendarScreen> with TickerProviderStateMixin {
-  final NavigationService _navigationService = locator<NavigationService>();
+class _CalendarPageState extends State<CalendarPage> with TickerProviderStateMixin {
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
 
-  _SingleCalendarScreenState(this._calendarID)
-      : _calendar = UserController.calendarList[_calendarID],
-        _calendarMenuChoices = UserController.calendarList[_calendarID].isOwner ? _calendarMenuChoicesAdmin : _calendarMenuChoicesMember;
-
   static const List<CalendarMenuChoice> _calendarMenuChoicesMember = const <CalendarMenuChoice>[
-    const CalendarMenuChoice(menuStatus: calendarMenuStatus.NOTES_AND_VOTES, title: 'Notizen & Abstimmungen', icon: Icons.sticky_note_2_outlined),
-    const CalendarMenuChoice(menuStatus: calendarMenuStatus.SETTINGS, title: 'Kalender Einstellungen', icon: Icons.settings),
+    const CalendarMenuChoice(menuStatus: CalendarMenuStatus.NOTES_AND_VOTES, title: 'Notizen & Abstimmungen', icon: Icons.sticky_note_2_outlined),
+    const CalendarMenuChoice(menuStatus: CalendarMenuStatus.SETTINGS, title: 'Kalender Einstellungen', icon: Icons.settings),
   ];
 
   static const List<CalendarMenuChoice> _calendarMenuChoicesAdmin = const <CalendarMenuChoice>[
-    const CalendarMenuChoice(menuStatus: calendarMenuStatus.NOTES_AND_VOTES, title: 'Notizen & Abstimmungen', icon: Icons.sticky_note_2_outlined),
-    const CalendarMenuChoice(menuStatus: calendarMenuStatus.QR_INVITATION, title: 'QR Einladung erstellen', icon: Icons.qr_code),
-    const CalendarMenuChoice(menuStatus: calendarMenuStatus.SETTINGS, title: 'Kalender Einstellungen', icon: Icons.settings),
+    const CalendarMenuChoice(menuStatus: CalendarMenuStatus.NOTES_AND_VOTES, title: 'Notizen & Abstimmungen', icon: Icons.sticky_note_2_outlined),
+    const CalendarMenuChoice(menuStatus: CalendarMenuStatus.QR_INVITATION, title: 'QR Einladung erstellen', icon: Icons.qr_code),
+    const CalendarMenuChoice(menuStatus: CalendarMenuStatus.SETTINGS, title: 'Kalender Einstellungen', icon: Icons.settings),
   ];
 
-  final Calendar _calendar;
-  final String _calendarID;
-
-  final List<CalendarMenuChoice> _calendarMenuChoices;
+  List<CalendarMenuChoice> _calendarMenuChoices;
 
   Map<DateTime, List<dynamic>> _events = new Map<DateTime, List<dynamic>>();
   Map<DateTime, List<dynamic>> _holidays = new Map<DateTime, List<dynamic>>();
@@ -63,10 +53,12 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    DateTime now = DateTime.now();
 
-    final _selectedDay = DateTime(now.year, now.month, now.day);
-    currentVisibleMonth = DateTime(now.year, now.month);
+    _calendarMenuChoices = widget.linkedCalendar.isOwner ? _calendarMenuChoicesAdmin : _calendarMenuChoicesMember;
+
+    final DateTime now = DateTime.now();
+    final selectedDay = DateTime(now.year, now.month, now.day);
+    final currentVisibleMonth = DateTime(now.year, now.month);
 
     setState(() {
       _isLoadingEvents = true;
@@ -75,11 +67,11 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
     _selectedEvents = [];
     _selectedHolidays = [];
 
-    _calendar.getUiEvents(_selectedDay.year, _selectedDay.month).then((list) {
+    widget.linkedCalendar.getUiEvents(selectedDay.year, selectedDay.month).then((list) {
       if (currentVisibleMonth.year == now.year && currentVisibleMonth.month == now.month) {
         setState(() {
           _events = list;
-          _selectedEvents = _events[_selectedDay] ?? [];
+          _selectedEvents = _events[selectedDay] ?? [];
           _isLoadingEvents = false;
         });
       }
@@ -89,12 +81,12 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
       DateTime holidayDate = DateTime(holiday.date.year, holiday.date.month, holiday.date.day);
 
       if(!_holidays.containsKey(holidayDate)) {
-        _holidays[holidayDate] = new List<dynamic>();
+        _holidays[holidayDate] = [];
       }
 
       _holidays[holidayDate].add(holiday.name);
 
-      if(holidayDate == _selectedDay) {
+      if(holidayDate == selectedDay) {
         _selectedHolidays.add(holiday.name);
       }
     });
@@ -117,26 +109,26 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
   }
 
   Future<void> _selectMenuChoice(CalendarMenuChoice choice) async {
-    if (choice.menuStatus == calendarMenuStatus.SETTINGS) {
-      _navigationService.pushNamed('/calendarSettings', arguments: _calendarID);
-    } else if (choice.menuStatus == calendarMenuStatus.NOTES_AND_VOTES) {
-      _navigationService.pushNamed('/calendarNotesAndVotes', arguments: _calendarID);
-    } else if (choice.menuStatus == calendarMenuStatus.QR_INVITATION) {
+    if (choice.menuStatus == CalendarMenuStatus.SETTINGS) {
+      Navigator.pushNamed(context, '/calendarSettings', arguments: widget.linkedCalendar);
+    } else if (choice.menuStatus == CalendarMenuStatus.NOTES_AND_VOTES) {
+      Navigator.pushNamed(context, '/calendarNotesAndVotes', arguments: widget.linkedCalendar);
+    } else if (choice.menuStatus == CalendarMenuStatus.QR_INVITATION) {
       await createQRCode();
     }
   }
 
   Future<bool> createQRCode() async {
-    InvitationRequest invitationData = await DialogPopup.asyncCreateQRCodePopup(widget._calendarID);
+    InvitationRequest invitationData = await DialogPopup.asyncCreateQRCodePopup(widget.linkedCalendar.id);
     if (invitationData == null) return false;
 
-    String invitationToken = await _calendar.getInvitationToken(invitationData.canCreateEvents, invitationData.canEditEvents, invitationData.duration);
+    String invitationToken = await widget.linkedCalendar.getInvitationToken(invitationData.canCreateEvents, invitationData.canEditEvents, invitationData.duration);
     if (invitationToken == null) {
       await DialogPopup.asyncOkDialog("QR-Code konnte nicht erstellt werden!", Api.errorMessage);
       return false;
     }
 
-    invitationToken = '{"n":"${_calendar.name}","k":"' + invitationToken + '"}';
+    invitationToken = '{"n":"${widget.linkedCalendar.name}","k":"' + invitationToken + '"}';
     await DialogPopup.asyncShowQRCodePopup(invitationToken);
     return true;
   }
@@ -150,7 +142,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
     );
 
     setState(() {
-      _selectedEvents = _calendar.loadedUIMonths[initDate.year.toString() + initDate.month.toString()].uiEvents[DateTime(initDate.year, initDate.month, initDate.day)];
+      _selectedEvents = widget.linkedCalendar.loadedUIMonths[initDate.year.toString() + initDate.month.toString()].uiEvents[DateTime(initDate.year, initDate.month, initDate.day)];
     });
   }
 
@@ -175,7 +167,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       DialogPopup.asyncOkDialog("Event konnten nicht erstellt werden!", Api.errorMessage);
     } else {
-      if (selectedCalendar.id == _calendar.id) {
+      if (selectedCalendar.id == widget.linkedCalendar.id) {
         await _rebuildOnSpecificDate(newEvent.startDate);
       }
 
@@ -184,12 +176,12 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
   }
 
   void _editEvent(BigInt eventID) async {
-    EventData editedEvent = await EventPopup.showEventSettingDialog(_calendar.id, eventID: eventID);
+    EventData editedEvent = await EventPopup.showEventSettingDialog(widget.linkedCalendar.id, eventID: eventID);
 
     if (editedEvent != null) {
       DialogPopup.asyncLoadingDialog(_keyLoader, "Speichere Änderungen...");
 
-      bool success = await _calendar.editEvent(eventID, editedEvent.startDate, editedEvent.endDate, editedEvent.title, editedEvent.description, editedEvent.daylong, editedEvent.color).catchError((e) {
+      bool success = await widget.linkedCalendar.editEvent(eventID, editedEvent.startDate, editedEvent.endDate, editedEvent.title, editedEvent.description, editedEvent.daylong, editedEvent.color).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
         return false;
       });
@@ -211,7 +203,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
         ConfirmAction.OK) {
       DialogPopup.asyncLoadingDialog(_keyLoader, "Lösche Event...");
 
-      bool success = await _calendar.removeEvent(eventID).catchError((e) {
+      bool success = await widget.linkedCalendar.removeEvent(eventID).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
         return false;
       });
@@ -246,7 +238,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
       _isLoadingEvents = true;
     });
 
-    await _calendar.getUiEvents(first.year, first.month).then((list) {
+    await widget.linkedCalendar.getUiEvents(first.year, first.month).then((list) {
       if (currentVisibleMonth.year == first.year && currentVisibleMonth.month == first.month) {
         setState(() {
           _events = list;
@@ -262,7 +254,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
       runCallback: true,
     );
 
-    EventPopup.showEventSettingDialog(_calendar.id, initTime: DateTime(day.year, day.month, day.day, 12), calendarChangeable: true).then((EventData newEvent) {
+    EventPopup.showEventSettingDialog(widget.linkedCalendar.id, initTime: DateTime(day.year, day.month, day.day, 12), calendarChangeable: true).then((EventData newEvent) {
       if (newEvent != null) {
         _addEvent(newEvent);
       }
@@ -277,22 +269,22 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            _navigationService.pop();
+            Navigator.pop(context);
           },
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Icon(
-              _calendar.icon,
-              color: _calendar.color,
+              widget.linkedCalendar.icon,
+              color: widget.linkedCalendar.color,
               size: 32,
             ),
             SizedBox(
               width: 15,
             ),
             Text(
-              _calendar.name,
+              widget.linkedCalendar.name,
               style: TextStyle(color: ThemeController.activeTheme().textColor),
             ),
           ],
@@ -343,10 +335,10 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
           Expanded(child: _buildEventList()),
         ],
       ),
-      floatingActionButton: (_calendar.canCreateEvents && _showAddEventButton)
+      floatingActionButton: (widget.linkedCalendar.canCreateEvents && _showAddEventButton)
           ? FloatingActionButton(
               onPressed: () async {
-                EventData newEvent = await EventPopup.showEventSettingDialog(_calendar.id, initTime: _calendarController.selectedDay, calendarChangeable: true);
+                EventData newEvent = await EventPopup.showEventSettingDialog(widget.linkedCalendar.id, initTime: _calendarController.selectedDay, calendarChangeable: true);
                 if (newEvent != null) {
                   _addEvent(newEvent);
                 }
@@ -492,11 +484,11 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
 
   List<Widget> _buildEventTileList() {
     return _selectedEvents.map((event) {
-      bool _canEditThisEvent = _calendar.canEditEvents;
+      bool _canEditThisEvent = widget.linkedCalendar.canEditEvents;
 
       if (!_canEditThisEvent) {
-        if (_calendar.dynamicEventMap.containsKey(event.eventID)) {
-          if (UserController.user.userID == _calendar.dynamicEventMap[event.eventID].userID) {
+        if (widget.linkedCalendar.dynamicEventMap.containsKey(event.eventID)) {
+          if (UserController.user.userID == widget.linkedCalendar.dynamicEventMap[event.eventID].userID) {
             _canEditThisEvent = true;
           }
         }
@@ -511,7 +503,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           title: Text(event.title),
           onTap: () {
-            EventPopup.showEventInformation(_calendar.id, event.eventID);
+            EventPopup.showEventInformation(widget.linkedCalendar.id, event.eventID);
           },
         );
       } else {
@@ -531,7 +523,7 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
           subtitle: Text(subTitle),
           isThreeLine: (event.startTime == "" || event.endTime == "") ? false : true,
           onTap: () {
-            EventPopup.showEventInformation(_calendar.id, event.eventID);
+            EventPopup.showEventInformation(widget.linkedCalendar.id, event.eventID);
           },
         );
       }
@@ -628,12 +620,12 @@ class _SingleCalendarScreenState extends State<SingleCalendarScreen> with Ticker
   }
 }
 
-enum calendarMenuStatus { SETTINGS, NOTES_AND_VOTES, QR_INVITATION }
+enum CalendarMenuStatus { SETTINGS, NOTES_AND_VOTES, QR_INVITATION }
 
 class CalendarMenuChoice {
   const CalendarMenuChoice({this.menuStatus, this.title, this.icon});
 
-  final calendarMenuStatus menuStatus;
+  final CalendarMenuStatus menuStatus;
   final String title;
   final IconData icon;
 }

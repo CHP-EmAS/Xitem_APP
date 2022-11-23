@@ -1,57 +1,45 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Models/Calendar.dart';
-import 'package:de/Models/Note.dart';
-import 'package:de/Models/Voting.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
+import 'package:de/controllers/ApiController.dart';
+import 'package:de/controllers/ThemeController.dart';
+import 'package:de/controllers/UserController.dart';
+import 'package:de/models/Calendar.dart';
+import 'package:de/models/Note.dart';
+import 'package:de/models/Voting.dart';
+import 'package:de/utils/custom_scroll_behavior.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/note_popups.dart';
 import 'package:de/Widgets/Dialogs/voting_popups.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:de/Widgets/note_grid_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
-import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Widgets/note_grid_widget.dart';
+class CalendarNotesVotesPage extends StatefulWidget {
+  const CalendarNotesVotesPage({Key key, @required this.linkedCalendar});
 
-class CalendarNotesAndVotesScreen extends StatefulWidget {
-  const CalendarNotesAndVotesScreen(this._calendarID);
-
-  final String _calendarID;
+  final Calendar linkedCalendar;
 
   @override
-  State<StatefulWidget> createState() {
-    return _CalendarNotesAndVotesScreenState(_calendarID);
-  }
+  State<StatefulWidget> createState() => _CalendarNotesVotesPageState();
+
 }
 
-class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScreen> with SingleTickerProviderStateMixin {
-  final NavigationService _navigationService = locator<NavigationService>();
+class _CalendarNotesVotesPageState extends State<CalendarNotesVotesPage> with SingleTickerProviderStateMixin {
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   RefreshController _refreshController = RefreshController(initialRefresh: false);
 
-  _CalendarNotesAndVotesScreenState(this._calendarID) : _calendar = UserController.calendarList[_calendarID];
-
-  final String _calendarID;
-  final Calendar _calendar;
+  List<Voting> _polls = [];
+  List<Note> _pinnedNotes = [];
+  List<Note> _unpinnedNotes = [];
 
   TabController _tabController;
-
   final List<Container> myTabs = <Container>[
     Container(height: 54, child: Tab(child: Text("Notizen", style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16)))),
     Container(height: 54, child: Tab(child: Text("Abstimmungen", style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16)))),
   ];
 
-  List<Voting> _votings = new List<Voting>();
-
-  List<Note> _pinnedNotes = new List<Note>();
-  List<Note> _unpinnedNotes = new List<Note>();
-
   @override
   void initState() {
-    _votings = _calendar.votingMap.values.toList(growable: false);
+    _polls = widget.linkedCalendar.votingMap.values.toList(growable: false);
     loadNotes();
 
     _tabController = TabController(vsync: this, length: myTabs.length, initialIndex: 0);
@@ -75,7 +63,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
     _pinnedNotes.clear();
     _unpinnedNotes.clear();
 
-    _calendar.noteMap.forEach((noteID, note) {
+    widget.linkedCalendar.noteMap.forEach((noteID, note) {
       if (note.pinned)
         _pinnedNotes.add(note);
       else
@@ -84,12 +72,12 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
   }
 
   void _onRefresh() async {
-    bool reloadCompleted = await this._calendar.reload();
+    bool reloadCompleted = await widget.linkedCalendar.reload();
 
     if (reloadCompleted) {
       setState(() {
         loadNotes();
-        _votings = _calendar.votingMap.values.toList(growable: false);
+        _polls = widget.linkedCalendar.votingMap.values.toList(growable: false);
       });
       _refreshController.refreshCompleted();
     } else {
@@ -104,7 +92,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
       if (votes.length > 0) {
         DialogPopup.asyncLoadingDialog(_keyLoader, "Übermittle Abstimmung...");
 
-        bool success = await _calendar.vote(voting.votingID, votes).catchError((e) {
+        bool success = await widget.linkedCalendar.vote(voting.votingID, votes).catchError((e) {
           Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
           return false;
         });
@@ -116,8 +104,8 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
           DialogPopup.asyncOkDialog("Abstimmung konnten nicht übermittelt werden!", Api.errorMessage);
         } else {
           setState(() {
-            _calendar.reload();
-            _votings = _calendar.votingMap.values.toList(growable: false);
+            widget.linkedCalendar.reload();
+            _polls = widget.linkedCalendar.votingMap.values.toList(growable: false);
           });
           Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
         }
@@ -146,7 +134,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
         DialogPopup.asyncOkDialog("Abstimmung konnten nicht gelöscht werden!", Api.errorMessage);
       } else {
         setState(() {
-          _votings = _calendar.votingMap.values.toList(growable: false);
+          _polls = _calendar.votingMap.values.toList(growable: false);
         });
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       }
@@ -159,7 +147,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
 
     DialogPopup.asyncLoadingDialog(_keyLoader, "Starte Abstimmung...");
 
-    bool success = await _calendar.createVoting(votingData.title, votingData.multipleChoice, votingData.abstentionAllowed, votingData.choices).catchError((e) {
+    bool success = await widget.linkedCalendar.createVoting(votingData.title, votingData.multipleChoice, votingData.abstentionAllowed, votingData.choices).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       return false;
     });
@@ -173,19 +161,19 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
     }
 
     setState(() {
-      _votings = _calendar.votingMap.values.toList(growable: false);
+      _polls = widget.linkedCalendar.votingMap.values.toList(growable: false);
     });
 
     Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
   }
 
   void _createNote() async {
-    NoteData noteData = await NotePopup.notePopup(_calendarID, null, true);
+    NoteData noteData = await NotePopup.notePopup(widget.linkedCalendar.id, null, true);
     if (noteData == null) return;
 
     DialogPopup.asyncLoadingDialog(_keyLoader, "Erstelle Notiz...");
 
-    bool success = await _calendar.createNote(noteData.title, noteData.content, noteData.pinned, noteData.color).catchError((e) {
+    bool success = await widget.linkedCalendar.createNote(noteData.title, noteData.content, noteData.pinned, noteData.color).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       return false;
     });
@@ -214,7 +202,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            _navigationService.pop();
+            Navigator.pop(context);
           },
         ),
         titleSpacing: 0,
@@ -259,7 +247,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
                         child: Container(
                           margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
                           child: Text(
-                            _calendar.canCreateEvents
+                            widget.linkedCalendar.canCreateEvents
                                 ? "Keine gespeicherten Notizen in diesem Kalender, tippe auf das Notizsymbol um eine neue Notiz zu erstellen."
                                 : "Keine gespeicherten Notizen in diesem Kalender.",
                             textAlign: TextAlign.center,
@@ -280,12 +268,12 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
             ),
             controller: _refreshController,
             onRefresh: _onRefresh,
-            child: _votings.length <= 0
+            child: _polls.length <= 0
                 ? Center(
                     child: Container(
                       margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
                       child: Text(
-                        _calendar.isOwner
+                        widget.linkedCalendar.isOwner
                             ? "Keine gespeicherten Abstimmungen in diesem Kalender, tippe auf das Abstimmungssymbol um eine neue Abstimmung zu starten."
                             : "Keine gespeicherten Abstimmungen in diesem Kalender.",
                         textAlign: TextAlign.center,
@@ -293,7 +281,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
                     ),
                   )
                 : ListView.builder(
-                    itemCount: _votings.length,
+                    itemCount: _polls.length,
                     itemBuilder: _buildItemsForVotingListView,
                   ),
           ),
@@ -304,7 +292,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
   }
 
   Widget _buildItemsForVotingListView(BuildContext context, int index) {
-    Voting currentVoting = _votings[index];
+    Voting currentVoting = _polls[index];
 
     //Proof if Calendar exists, if not return free space
     if (!UserController.calendarList.containsKey(currentVoting.calendarID)) return Center();
@@ -316,7 +304,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
       visualDensity: VisualDensity.compact,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       title: Text(currentVoting.title),
-      subtitle: Text(currentVoting.numberUsersWhoHaveVoted.toString() + "/" + _calendar.assocUserList.length.toString() + " Mitglieder haben bereits abgestimmt"),
+      subtitle: Text(currentVoting.numberUsersWhoHaveVoted.toString() + "/" + widget.linkedCalendar.assocUserList.length.toString() + " Mitglieder haben bereits abgestimmt"),
       trailing: currentVoting.userHasVoted
           ? Icon(
               Icons.check,
@@ -414,14 +402,14 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
   }
 
   void _onNoteTap(Note note) async {
-    bool canEdit = _calendar.canEditEvents || note.ownerID == UserController.user.userID;
+    bool canEdit = widget.linkedCalendar.canEditEvents || note.ownerID == UserController.user.userID;
 
-    NoteData noteData = await NotePopup.notePopup(_calendarID, note.noteID, canEdit);
+    NoteData noteData = await NotePopup.notePopup(widget.linkedCalendar.id, note.noteID, canEdit);
     if (noteData == null) return;
 
     DialogPopup.asyncLoadingDialog(_keyLoader, "Änderungen werden übernommen...");
 
-    bool success = await _calendar.changeNote(note.noteID, noteData.title, noteData.content, noteData.pinned, noteData.color).catchError((e) {
+    bool success = await widget.linkedCalendar.changeNote(note.noteID, noteData.title, noteData.content, noteData.pinned, noteData.color).catchError((e) {
       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       return false;
     });
@@ -442,14 +430,14 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
   }
 
   void _onNoteLongPress(Note note) async {
-    bool canDelete = _calendar.canEditEvents || note.ownerID == UserController.user.userID;
+    bool canDelete = widget.linkedCalendar.canEditEvents || note.ownerID == UserController.user.userID;
 
     if (!canDelete) return;
 
     if (await DialogPopup.asyncConfirmDialog("Notiz löschen?", "Möchtest du die Notiz unwiederuflich löschen?.") == ConfirmAction.OK) {
       DialogPopup.asyncLoadingDialog(_keyLoader, "Notiz wird gelöscht...");
 
-      bool success = await _calendar.removeNote(note.noteID).catchError((e) {
+      bool success = await widget.linkedCalendar.removeNote(note.noteID).catchError((e) {
         Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
         return false;
       });
@@ -474,7 +462,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
     return _tabController.index == 0
 
         //Notiz Action Button
-        ? (_calendar.canCreateEvents ? FloatingActionButton(
+        ? (widget.linkedCalendar.canCreateEvents ? FloatingActionButton(
             tooltip: "Notiz erstellen",
             child: Icon(
               Icons.sticky_note_2_rounded,
@@ -488,7 +476,7 @@ class _CalendarNotesAndVotesScreenState extends State<CalendarNotesAndVotesScree
           ) : Center())
 
         //Abstimmung Action Button
-        : (_calendar.isOwner
+        : (widget.linkedCalendar.isOwner
             ? FloatingActionButton(
                 tooltip: "Abstimmung starten",
                 child: Icon(

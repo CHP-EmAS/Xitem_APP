@@ -1,11 +1,11 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Interfaces/api_interfaces.dart';
-import 'package:de/Models/Event.dart';
-import 'package:de/Models/Member.dart';
-import 'package:de/Models/Note.dart';
-import 'package:de/Models/Voting.dart';
+import 'package:de/controllers/ApiController.dart';
+import 'package:de/controllers/UserController.dart';
+import 'package:de/interfaces/ApiInterfaces.dart';
+import 'package:de/models/Event.dart';
+import 'package:de/models/Member.dart';
+import 'package:de/models/Note.dart';
 import 'package:de/Widgets/Dialogs/event_popups.dart';
+import 'package:de/models/Voting.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

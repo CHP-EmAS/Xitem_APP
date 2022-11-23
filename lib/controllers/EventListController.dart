@@ -1,8 +1,8 @@
-import 'package:de/Controllers/SettingController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Models/Calendar.dart';
-import 'package:de/Models/Event.dart';
-import 'package:de/Models/Voting.dart';
+import 'package:de/controllers/SettingController.dart';
+import 'package:de/controllers/UserController.dart';
+import 'package:de/models/Calendar.dart';
+import 'package:de/models/Event.dart';
+import 'package:de/models/Voting.dart';
 import 'package:intl/intl.dart';
 
 class EventListController {

@@ -1,6 +1,6 @@
 import 'package:de/Controllers/ApiController.dart';
 import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Interfaces/api_interfaces.dart';
+import 'package:de/Interfaces/ApiInterfaces.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
 import 'package:flutter/material.dart';

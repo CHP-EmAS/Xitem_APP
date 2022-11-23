@@ -1,22 +1,18 @@
-import 'package:de/Controllers/NavigationController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Models/Calendar.dart';
-import 'package:de/Models/User.dart';
-import 'package:de/Models/Voting.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/controllers/ThemeController.dart';
+import 'package:de/controllers/UserController.dart';
+import 'package:de/models/Calendar.dart';
+import 'package:de/models/User.dart';
+import 'package:de/models/Voting.dart';
+import 'package:de/utils/custom_scroll_behavior.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class VotingPopup {
-  static final NavigationService _navigationService = locator<NavigationService>();
 
-  static Future<NewVotingRequest> createVotingPopup() {
+  static Future<NewVotingRequest> createVotingPopup(BuildContext context) {
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           final TextEditingController _title = TextEditingController();
 
@@ -144,13 +140,13 @@ class VotingPopup {
         });
   }
 
-  static Future<List<int>> showVotingInformationPopup(Voting voting) async {
+  static Future<List<int>> showVotingInformationPopup(BuildContext context, Voting voting) async {
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           if (!UserController.calendarList.containsKey(voting.calendarID)) {
             DialogPopup.asyncOkDialog("Unerwarteter Fehler", "Zugehöriger Kalender konnte nicht gefunden werden!");
-            _navigationService.pop(null);
+            Navigator.pop(context, null);
           }
 
           Calendar _calendar = UserController.calendarList[voting.calendarID];

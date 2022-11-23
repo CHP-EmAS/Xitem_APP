@@ -22,19 +22,6 @@ class _HomePageState extends State<HomePage> {
   CalendarListSubPage _calendarList;
   HolidayListSubPage _holidayList;
 
-  _HomePageState(_startIndex) {
-    this._selectedIndex = _startIndex;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _currentEventListWidget = new EventListSubPage();
-    _calendarList = new CalendarListSubPage();
-    _holidayList = new HolidayListSubPage();
-  }
-
   static final List<AppMenuChoice> _menuChoices = <AppMenuChoice>[
     const AppMenuChoice(menuStatus: AppMenuStatus.PROFILE, title: 'Account', icon: Icons.account_circle),
     const AppMenuChoice(menuStatus: AppMenuStatus.SETTINGS, title: 'Einstellungen', icon: Icons.settings),
@@ -68,23 +55,17 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  _HomePageState(_startIndex) {
+    this._selectedIndex = _startIndex;
   }
 
-  void _selectMenuChoice(AppMenuChoice choice) {
-    if (choice.menuStatus == AppMenuStatus.LOGOUT) {
-      UserController.logout();
-    } else if (choice.menuStatus == AppMenuStatus.PROFILE) {
-      Navigator.pushNamed(context, "/profile").then((_) => setState(() {}));
-    } else if (choice.menuStatus == AppMenuStatus.SETTINGS) {
-      Navigator.pushNamed(context, "/settings").then((_) => setState(() {
-        _currentEventListWidget.refreshState();
-        _holidayList.refreshState();
-      }));
-    }
+  @override
+  void initState() {
+    super.initState();
+
+    _currentEventListWidget = new EventListSubPage();
+    _calendarList = new CalendarListSubPage();
+    _holidayList = new HolidayListSubPage();
   }
 
   Widget buildBody() {
@@ -213,6 +194,26 @@ class _HomePageState extends State<HomePage> {
       } else {
         await Navigator.pushNamed(context, '/createCalendar');
       }
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void _selectMenuChoice(AppMenuChoice choice) async {
+    if (choice.menuStatus == AppMenuStatus.LOGOUT) {
+      await UserController.logout();
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (Route<dynamic> route) => false);
+    } else if (choice.menuStatus == AppMenuStatus.PROFILE) {
+      Navigator.pushNamed(context, "/profile").then((_) => setState(() {}));
+    } else if (choice.menuStatus == AppMenuStatus.SETTINGS) {
+      Navigator.pushNamed(context, "/settings").then((_) => setState(() {
+        _currentEventListWidget.refreshState();
+        _holidayList.refreshState();
+      }));
     }
   }
 }

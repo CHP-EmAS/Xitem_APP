@@ -1,12 +1,11 @@
 import 'dart:convert';
 
-import 'package:de/Controllers/NavigationController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Models/Calendar.dart';
-import 'package:de/Models/Member.dart';
-import 'package:de/Models/User.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/controllers/ThemeController.dart';
+import 'package:de/controllers/UserController.dart';
+import 'package:de/models/Calendar.dart';
+import 'package:de/models/Member.dart';
+import 'package:de/models/User.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cupertino_date_picker/flutter_cupertino_date_picker.dart';
@@ -17,11 +16,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 enum ConfirmAction { CANCEL, ACCEPT, OK }
 
 class DialogPopup {
-  static final NavigationService _navigationService = locator<NavigationService>();
 
-  static Future<ConfirmAction> asyncOkDialog(String title, String content) {
+  static Future<ConfirmAction> asyncOkDialog(BuildContext context, String title, String content) {
     return showDialog<ConfirmAction>(
-      context: _navigationService.navigatorKey.currentContext,
+      context: context,
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
@@ -43,9 +41,9 @@ class DialogPopup {
     );
   }
 
-  static Future<ConfirmAction> asyncConfirmDialog(String title, String content) {
+  static Future<ConfirmAction> asyncConfirmDialog(BuildContext context, String title, String content) {
     return showDialog<ConfirmAction>(
-      context: _navigationService.navigatorKey.currentContext,
+      context: context,
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
@@ -73,9 +71,9 @@ class DialogPopup {
     );
   }
 
-  static Future<void> asyncLoadingDialog(GlobalKey key, String loadingText) async {
+  static Future<void> asyncLoadingDialog(BuildContext context, GlobalKey key, String loadingText) async {
     return showDialog<void>(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return new WillPopScope(
@@ -100,11 +98,11 @@ class DialogPopup {
         });
   }
 
-  static Future<String> asyncPasswordDialog() {
+  static Future<String> asyncPasswordDialog(BuildContext context) {
     TextEditingController _textFieldController = TextEditingController();
 
     return showDialog<String>(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (context) {
           return AlertDialog(
             backgroundColor: ThemeController.activeTheme().infoDialogBackgroundColor,
@@ -141,7 +139,7 @@ class DialogPopup {
         });
   }
 
-  static Future<void> asyncUserInformationPopup(String userID) async {
+  static Future<void> asyncUserInformationPopup(BuildContext context, String userID) async {
     DateFormat dateOnlyFormat = new DateFormat.yMMMMd('de_DE');
 
     PublicUser user = UserController.getPublicUserInformation(userID);
@@ -154,7 +152,7 @@ class DialogPopup {
     }
 
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             backgroundColor: ThemeController.activeTheme().infoDialogBackgroundColor,
@@ -218,16 +216,16 @@ class DialogPopup {
         });
   }
 
-  static Future<void> asyncProfilePictureDialog(String userID) async {
+  static Future<void> asyncProfilePictureDialog(BuildContext context, String userID) async {
     PublicUser user = UserController.getPublicUserInformation(userID);
     if (user == null) return;
 
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           return GestureDetector(
             onTap: () {
-              _navigationService.pop();
+              Navigator.pop(context);
             },
             child: Dialog(
               elevation: 0,
@@ -240,7 +238,7 @@ class DialogPopup {
         });
   }
 
-  static Future<void> asyncCalendarInformationPopup(String calendarID) async {
+  static Future<void> asyncCalendarInformationPopup(BuildContext context, String calendarID) async {
     DateFormat dateOnlyFormat = new DateFormat.yMMMMd('de_DE');
 
     Calendar calendar = UserController.calendarList[calendarID];
@@ -250,7 +248,7 @@ class DialogPopup {
     String creationDate = dateOnlyFormat.format(calendar.creationDate);
 
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (context) {
           return AlertDialog(
             backgroundColor: ThemeController.activeTheme().infoDialogBackgroundColor,
@@ -294,9 +292,9 @@ class DialogPopup {
         });
   }
 
-  static Future<List<bool>> asyncEditMemberPopup(String calendarID, AssociatedUser member) async {
+  static Future<List<bool>> asyncEditMemberPopup(BuildContext context, String calendarID, AssociatedUser member) async {
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           bool _isOwner = member.isOwner;
           bool _canEditEvents = member.canEditEvents;
@@ -427,9 +425,9 @@ class DialogPopup {
         });
   }
 
-  static Future<void> asyncCalendarInvitationDialog(String calendarHash) async {
+  static Future<void> asyncCalendarInvitationDialog(BuildContext context, String calendarHash) async {
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             backgroundColor: ThemeController.activeTheme().infoDialogBackgroundColor,
@@ -458,9 +456,9 @@ class DialogPopup {
         });
   }
 
-  static Future<TimeOfDay> asyncTimeSliderDialog(TimeOfDay initTime) {
+  static Future<TimeOfDay> asyncTimeSliderDialog(BuildContext context, TimeOfDay initTime) {
     return showDialog<TimeOfDay>(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           TimeOfDay _currentTime = initTime;
 
@@ -507,9 +505,9 @@ class DialogPopup {
         });
   }
 
-  static Future<InvitationRequest> asyncCreateQRCodePopup(String calendarID) async {
+  static Future<InvitationRequest> asyncCreateQRCodePopup(BuildContext context, String calendarID) async {
     return showDialog(
-        context: _navigationService.navigatorKey.currentContext,
+        context: context,
         builder: (BuildContext context) {
           bool _canCreateEvents = true;
           bool _canEditEvents = false;

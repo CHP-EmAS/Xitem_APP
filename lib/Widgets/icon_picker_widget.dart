@@ -1,6 +1,4 @@
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:flutter/material.dart';
 
 const List<IconData> default_icons = [
@@ -155,8 +153,6 @@ class IconPicker extends StatefulWidget {
 }
 
 class _IconPickerState extends State<IconPicker> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
   IconData _currentIcon;
 
   @override
@@ -173,7 +169,7 @@ class _IconPickerState extends State<IconPicker> {
   @override
   Widget build(BuildContext context) {
     return widget.layoutBuilder(
-      _navigationService.navigatorKey.currentContext,
+      context,
       widget.availableIcons ?? default_icons,
       (IconData icon, [bool _, Function __]) => widget.itemBuilder(icon, _currentIcon == icon, () => changeIcon(icon)),
     );

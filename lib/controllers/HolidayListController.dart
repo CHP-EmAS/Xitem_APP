@@ -1,5 +1,5 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/SettingController.dart';
+import 'package:de/controllers/ApiController.dart';
+import 'package:de/controllers/SettingController.dart';
 
 class HolidayController {
   static List<PublicHoliday> loadedHolidays = new List<PublicHoliday>();

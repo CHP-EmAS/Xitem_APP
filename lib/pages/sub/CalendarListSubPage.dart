@@ -1,7 +1,7 @@
 import 'package:de/Controllers/EventListController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
+import 'package:de/Utils/custom_scroll_behavior.dart';
 import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 

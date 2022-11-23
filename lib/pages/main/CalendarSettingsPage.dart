@@ -1,43 +1,33 @@
 import 'dart:async';
 
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
 import 'package:de/Models/Calendar.dart';
 import 'package:de/Models/Member.dart';
 import 'package:de/Models/User.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/Utils/custom_scroll_behavior.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Widgets/icon_picker_widget.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
-class CalendarSettingsScreen extends StatefulWidget {
-  const CalendarSettingsScreen(this._calendarID);
+import '../../Widgets/icon_picker_widget.dart';
 
-  final String _calendarID;
+class CalendarSettingsScreen extends StatefulWidget {
+  const CalendarSettingsScreen({Key key, @required this.linkedCalendar});
+
+  final Calendar linkedCalendar;
 
   @override
-  State<StatefulWidget> createState() {
-    return _CalendarSettingsScreenState(_calendarID);
-  }
+  State<StatefulWidget> createState() => _CalendarSettingsScreenState();
 }
 
 class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with SingleTickerProviderStateMixin {
-  final NavigationService _navigationService = locator<NavigationService>();
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
-  RefreshController _refreshController = RefreshController(initialRefresh: false);
-
-  _CalendarSettingsScreenState(this._calendarID) : calendar = UserController.calendarList[_calendarID];
-
-  final String _calendarID;
-  final Calendar calendar;
+  final RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   final _name = TextEditingController();
   final _password = TextEditingController();
@@ -45,20 +35,20 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
 
   bool _alert = true;
 
-  Color currentColor = Colors.amber;
-  IconData currentIcon = default_icons[0];
+  Color _currentColor = Colors.amber;
+  IconData _currentIcon = default_icons[0];
 
-  void changeIcon(IconData icon) => setState(() => currentIcon = icon);
+  void changeIcon(IconData icon) => setState(() => _currentIcon = icon);
 
   @override
   void initState() {
     super.initState();
 
-    currentColor = calendar.color;
-    currentIcon = calendar.icon;
+    _currentColor = widget.linkedCalendar.color;
+    _currentIcon = widget.linkedCalendar.icon;
 
-    _name.text = calendar.name;
-    _canJoin = calendar.canJoin;
+    _name.text = widget.linkedCalendar.name;
+    _canJoin = widget.linkedCalendar.canJoin;
   }
 
   @override
@@ -67,7 +57,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
   }
 
   void _onRefresh() async {
-    bool reloadCompleted = await this.calendar.reload();
+    bool reloadCompleted = await widget.linkedCalendar.reload();
 
     if (reloadCompleted) {
       setState(() {});
@@ -82,7 +72,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
     TextStyle style = TextStyle(color: Colors.black, fontFamily: 'Montserrat', fontSize: 20.0);
 
     final saveLayoutButton = LoadingButton("Layout speichern", "Gespeichert", Colors.amber, () async {
-      if (await calendar.changeCalendarLayout(currentColor, currentIcon)) {
+      if (await widget.linkedCalendar.changeCalendarLayout(_currentColor, _currentIcon)) {
         setState(() => {});
         return true;
       } else {
@@ -92,9 +82,9 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
     });
 
     final saveInformationButton = LoadingButton("Einstellungen speichern", "Gespeichert", Colors.amber, () async {
-      if (await calendar.changeCalendarInformation(_name.text, _canJoin, _password.text)) {
+      if (await widget.linkedCalendar.changeCalendarInformation(_name.text, _canJoin, _password.text)) {
         setState(() {
-          calendar.name = _name.text;
+          widget.linkedCalendar.name = _name.text;
         });
         return true;
       } else {
@@ -111,8 +101,8 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
         final password = await DialogPopup.asyncPasswordDialog();
 
         if (password != "" && password != null) {
-          if (await UserController.deleteCalendar(widget._calendarID, password)) {
-            _navigationService.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
+          if (await UserController.deleteCalendar(widget.linkedCalendar.id, password)) {
+            Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
             return false;
           } else {
             DialogPopup.asyncOkDialog("Kalendar konnte nicht gelöscht werden!", Api.errorMessage);
@@ -131,8 +121,8 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
         final password = await DialogPopup.asyncPasswordDialog();
 
         if (password != "" && password != null) {
-          if (await UserController.leaveCalendar(widget._calendarID, password)) {
-            _navigationService.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
+          if (await UserController.leaveCalendar(widget.linkedCalendar.id, password)) {
+            Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
             return false;
           } else {
             DialogPopup.asyncOkDialog("Kalendar konnte nicht verlassen werden!", Api.errorMessage);
@@ -169,7 +159,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
     );
 
     Widget buildAdminPanel() {
-      if (calendar.isOwner) {
+      if (widget.linkedCalendar.isOwner) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -257,7 +247,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
     }
 
     Widget _buildAssocUserAdminSettings(AssociatedUser member) {
-      if (!calendar.isOwner)
+      if (!widget.linkedCalendar.isOwner)
         return SizedBox(
           height: 0,
           width: 0,
@@ -283,7 +273,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                 color: ThemeController.activeTheme().headlineColor,
               ),
               onPressed: () {
-                DialogPopup.asyncEditMemberPopup(_calendarID, member).then((List<bool> changeList) {
+                DialogPopup.asyncEditMemberPopup(widget.linkedCalendar.id, member).then((List<bool> changeList) {
                   if (changeList != null) {
                     DialogPopup.asyncLoadingDialog(_keyLoader, "Speichere Berechtigungen...");
                     member.changePermissions(changeList[0], changeList[1], changeList[2]).then((success) {
@@ -292,7 +282,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                         if (!success) {
                           DialogPopup.asyncOkDialog("Berechtigungen konnten nicht geändert werden!", Api.errorMessage);
                         } else {
-                          calendar.sortAssociatedUsers();
+                          widget.linkedCalendar.sortAssociatedUsers();
                           setState(() {});
                         }
                       });
@@ -317,11 +307,11 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
 
                         if (password != "") {
                           DialogPopup.asyncLoadingDialog(_keyLoader, "Entferne Nutzer...");
-                          bool removed = await calendar.removeAssociatedUsers(member.userID, password);
+                          bool removed = await widget.linkedCalendar.removeAssociatedUsers(member.userID, password);
                           await Future.delayed(const Duration(seconds: 1));
                           Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
                           if (removed) {
-                            calendar.sortAssociatedUsers();
+                            widget.linkedCalendar.sortAssociatedUsers();
                             setState(() {});
                           } else {
                             DialogPopup.asyncOkDialog("Nutzer konnte nicht entfernt werden!", Api.errorMessage);
@@ -377,7 +367,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
 
     Widget _buildAssocUserListView() {
       return Column(
-        children: calendar.assocUserList.map((member) => _buildAssocUserCard(member)).toList(),
+        children: widget.linkedCalendar.assocUserList.map((member) => _buildAssocUserCard(member)).toList(),
       );
     }
 
@@ -386,11 +376,11 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            _navigationService.pop();
+            Navigator.pop(context);
           },
         ),
         title: Text(
-          "'" + calendar.name + "' bearbeiten",
+          "'" + widget.linkedCalendar.name + "' bearbeiten",
           style: TextStyle(
             color: ThemeController.activeTheme().textColor,
           ),
@@ -436,7 +426,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  calendar.name,
+                                  widget.linkedCalendar.name,
                                   style: TextStyle(
                                     color: ThemeController.activeTheme().textColor,
                                     fontWeight: FontWeight.bold,
@@ -444,7 +434,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                                   ),
                                 ),
                                 Text(
-                                  "#" + calendar.hash,
+                                  "#" + widget.linkedCalendar.hash,
                                   style: TextStyle(
                                     color: ThemeController.activeTheme().globalAccentColor,
                                     fontSize: 20,
@@ -456,7 +446,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                             IconButton(
                               tooltip: "ID kopieren",
                               onPressed: () {
-                                Clipboard.setData(ClipboardData(text: calendar.name + "#" + calendar.hash));
+                                Clipboard.setData(ClipboardData(text: widget.linkedCalendar.name + "#" + widget.linkedCalendar.hash));
                                 DialogPopup.asyncOkDialog(
                                     "Kalender ID wurde in die Zwischenablage kopiert! ♥", "Mit dieser ID und dem Kalender Passwort können anderen Personen dem Kalender beitreten.");
                               },
@@ -491,15 +481,15 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                             flex: 2,
                             child: MaterialButton(
                               onPressed: () {
-                                PickerPopup.showColorPickerDialog(currentColor).then((selectedColor) {
+                                PickerPopup.showColorPickerDialog(_currentColor).then((selectedColor) {
                                   if (selectedColor != null) {
                                     setState(() {
-                                      currentColor = selectedColor;
+                                      _currentColor = selectedColor;
                                     });
                                   }
                                 });
                               },
-                              color: currentColor,
+                              color: _currentColor,
                               textColor: Colors.white,
                               padding: EdgeInsets.all(16),
                               shape: CircleBorder(),
@@ -524,14 +514,14 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                           Expanded(
                             flex: 2,
                             child: IconButton(
-                              icon: Icon(currentIcon),
+                              icon: Icon(_currentIcon),
                               color: Colors.white70,
                               iconSize: 40,
                               onPressed: () {
-                                PickerPopup.showIconPickerDialog(currentIcon).then((selectedIcon) {
+                                PickerPopup.showIconPickerDialog(_currentIcon).then((selectedIcon) {
                                   if (selectedIcon != null) {
                                     setState(() {
-                                      currentIcon = selectedIcon;
+                                      _currentIcon = selectedIcon;
                                     });
                                   }
                                 });
@@ -598,7 +588,7 @@ class _CalendarSettingsScreenState extends State<CalendarSettingsScreen> with Si
                         ),
                       ),
                       SizedBox(height: 10),
-                      Container(height: (calendar.assocUserList.length.toDouble() * 72), child: _buildAssocUserListView()),
+                      Container(height: (widget.linkedCalendar.assocUserList.length.toDouble() * 72), child: _buildAssocUserListView()),
                       SizedBox(height: 20),
                       leaveCalendarButton,
                       SizedBox(height: 10),

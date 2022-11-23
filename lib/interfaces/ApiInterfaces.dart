@@ -1,4 +1,4 @@
-import 'package:de/Models/Voting.dart';
+import 'package:de/models/Voting.dart';
 import 'package:flutter/cupertino.dart';
 
 abstract class ApiRequestData {

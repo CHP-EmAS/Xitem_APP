@@ -2,7 +2,7 @@ import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/UserController.dart';
 import 'package:de/Models/Calendar.dart';
 import 'package:de/Models/Note.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
+import 'package:de/Utils/custom_scroll_behavior.dart';
 import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:flutter/cupertino.dart';

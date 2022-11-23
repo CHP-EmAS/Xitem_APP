@@ -1,6 +1,6 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Interfaces/api_interfaces.dart';
+import 'package:de/controllers/ApiController.dart';
+import 'package:de/controllers/UserController.dart';
+import 'package:de/interfaces/ApiInterfaces.dart';
 
 class AssociatedUser {
   AssociatedUser(this.calendarID, this.userID, this.isOwner, this.canCreateEvents, this.canEditEvents) {

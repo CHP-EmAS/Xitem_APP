@@ -1,18 +1,13 @@
 import 'dart:io';
 
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/HolidayListController.dart';
-import 'package:de/Controllers/NavigationController.dart';
-import 'package:de/Interfaces/api_interfaces.dart';
-import 'package:de/Models/Calendar.dart';
-import 'package:de/Models/User.dart';
+import 'package:de/controllers/ApiController.dart';
+import 'package:de/controllers/HolidayListController.dart';
+import 'package:de/interfaces/ApiInterfaces.dart';
+import 'package:de/models/Calendar.dart';
+import 'package:de/models/User.dart';
 import 'package:flutter/cupertino.dart';
 
-import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Settings/locator.dart';
-
 class UserController {
-  static final NavigationService _navigationService = locator<NavigationService>();
-
   static AppUser user;
 
   static PublicUser unknownUser = new PublicUser("0", "Unbekannt", null, "Unbekannt", null);
@@ -42,14 +37,12 @@ class UserController {
     return true;
   }
 
-  static Future<void> logout() async {
+  static void logout() async {
     await Api.logout();
 
     user = null;
     calendarList.clear();
     publicUserList.clear();
-
-    _navigationService.pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
 
   static Future<bool> changeUserInformation(String name, DateTime birthday) async {

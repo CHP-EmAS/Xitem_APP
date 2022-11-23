@@ -5,7 +5,7 @@ import 'package:de/Controllers/UserController.dart';
 import 'package:de/Models/Calendar.dart';
 import 'package:de/Models/Event.dart';
 import 'package:de/Models/Voting.dart';
-import 'package:de/Settings/custom_scroll_behavior.dart';
+import 'package:de/Utils/custom_scroll_behavior.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/event_popups.dart';
 import 'package:de/Widgets/Dialogs/voting_popups.dart';

@@ -1,11 +1,9 @@
 import 'dart:io';
 
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'package:de/Interfaces/api_interfaces.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/Interfaces/ApiInterfaces.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
 import 'package:flutter/material.dart';
@@ -13,17 +11,16 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen();
+class EditProfilePage extends StatefulWidget {
+  const EditProfilePage();
 
   @override
   State<StatefulWidget> createState() {
-    return _EditProfileScreenState();
+    return _EditProfilePageState();
   }
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
+class _EditProfilePageState extends State<EditProfilePage> {
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
 
   final _name = TextEditingController();
@@ -32,6 +29,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final birthdayFormat = new DateFormat.yMMMMd('de_DE');
   DateTime _birthday;
 
+  final _oldPassword = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _repeatPassword = TextEditingController();
+
+  File _newAvatarImage;
+  File _pickedImage;
+  final ImagePicker picker = new ImagePicker();
+
+  @override
   void initState() {
     if (UserController.user.name != null) {
       _name.text = UserController.user.name;
@@ -45,67 +51,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
   }
 
-  File _newAvatarImage;
-  File _pickedImage;
-  ImagePicker picker = new ImagePicker();
-
-  Future<bool> _pickImage() async {
-    _pickedImage = null;
-    final pickedImage = await picker.getImage(source: ImageSource.gallery);
-
-    if (pickedImage != null) {
-      _pickedImage = File(pickedImage.path);
-      return true;
-    }
-
-    return false;
-  }
-
-  Future<bool> _cropImage() async {
-    final File croppedFile = await ImageCropper.cropImage(
-      sourcePath: _pickedImage.path,
-      aspectRatioPresets: [
-        CropAspectRatioPreset.square,
-      ],
-      androidUiSettings:
-          AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
-      iosUiSettings: IOSUiSettings(
-        title: 'Profilbild anpassen',
-      ),
-      compressFormat: ImageCompressFormat.png,
-    );
-
-    if (croppedFile != null) {
-      _newAvatarImage = croppedFile;
-      return true;
-    }
-
-    return false;
-  }
-
-  Future<Null> _selectDate(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
-        context: context,
-        errorFormatText: "Ungültiges Format",
-        helpText: "Geburtstag auswählen",
-        initialDatePickerMode: DatePickerMode.year,
-        useRootNavigator: false,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(1901, 1),
-        lastDate: DateTime.now(),
-        locale: Locale('de', 'DE'));
-    if (picked != null && picked != _birthday) {
-      _birthday = picked;
-      setState(() {
-        _birthdayText.text = birthdayFormat.format(picked);
-      });
-    }
-  }
-
-  final _oldPassword = TextEditingController();
-  final _newPassword = TextEditingController();
-  final _repeatPassword = TextEditingController();
-
   @override
   void dispose() {
     super.dispose();
@@ -113,9 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
-
-    imageCache.clear();
+    final TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
 
     final nameField = TextField(
       obscureText: false,
@@ -156,19 +99,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
 
-    final saveProfileButton = LoadingButton("Speichern", "Gespeichert", Colors.amber, () async {
-      FocusScope.of(context).unfocus();
-
-      return await UserController.changeUserInformation(_name.text, _birthday).then((registerSuccess) async {
-        if (registerSuccess) {
-          await DialogPopup.asyncOkDialog("Änderungen gespeichert", "Die Änderungen wurden erfolgreich an Xitem übermittlet");
-          return true;
-        } else {
-          await DialogPopup.asyncOkDialog("Änderungen konnten nicht gespeichert werden!", Api.errorMessage);
-          return false;
-        }
-      });
-    });
+    final saveProfileButton = LoadingButton("Speichern", "Gespeichert", Colors.amber, _saveProfile);
 
     final oldPasswordField = TextField(
       obscureText: true,
@@ -209,29 +140,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
-    final changePasswordButton = LoadingButton("Passwort ändern", "Passwort gespeichert", Colors.amber, () async {
-      FocusScope.of(context).unfocus();
-
-      if (_oldPassword.text == "" || _newPassword.text == "" || _repeatPassword.text == "") return false;
-
-      return await Api.changePassword(ChangePasswordRequest(_oldPassword.text, _newPassword.text, _repeatPassword.text)).then((success) async {
-        if (success) {
-          await DialogPopup.asyncOkDialog("Passwort geändert", "Die Änderungen wurden erfolgreich an Xitem übermittelt. Bitte melde dich erneut an.");
-          UserController.logout();
-          return true;
-        } else {
-          await DialogPopup.asyncOkDialog("Passwort konnten nicht gespeichert werden!", Api.errorMessage);
-          return false;
-        }
-      });
-    });
+    final changePasswordButton = LoadingButton("Passwort ändern", "Passwort gespeichert", Colors.amber, _changePassword);
 
     return Scaffold(
         appBar: AppBar(
           leading: BackButton(
             color: ThemeController.activeTheme().iconColor,
             onPressed: () {
-              _navigationService.pop();
+              Navigator.pop(context);
             },
           ),
           title: Text(
@@ -254,38 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: <Widget>[
                     Center(
                       child: GestureDetector(
-                        onTap: () async {
-                          bool imagePicked = await _pickImage();
-                          if (imagePicked) {
-                            bool imageCopped = await _cropImage();
-
-                            if (!imageCopped) {
-                              setState(() {
-                                DialogPopup.asyncOkDialog("Profilbild konnte nicht geändert werden!", "Es ist ein Fehler während der Bildauswahl aufgetreten, bitte versuch es erneut.");
-                                _newAvatarImage = null;
-                              });
-                            } else {
-                              DialogPopup.asyncLoadingDialog(_keyLoader, "Speichere Profilbild...");
-
-                              if (_newAvatarImage != null) {
-                                bool success = await UserController.changeAvatar(_newAvatarImage).catchError((e) {
-                                  Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-                                  return false;
-                                });
-
-                                await Future.delayed(const Duration(seconds: 1));
-                                Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-
-                                if (!success)
-                                  DialogPopup.asyncOkDialog("Profilbild konnte nicht geändert werden!", Api.errorMessage);
-                                else {
-                                  setState(() {});
-                                  DialogPopup.asyncOkDialog("Profilbild gespeichert", "Dein Profilbild wurde erfolgreich an Xitem übermittelt.");
-                                }
-                              }
-                            }
-                          }
-                        },
+                        onTap: _changeProfilePicture,
                         child: CircleAvatar(
                           backgroundImage: (_newAvatarImage == null) ? FileImage(UserController.user.avatar) : FileImage(_newAvatarImage),
                           radius: 60,
@@ -350,5 +235,122 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ],
           ),
         )));
+  }
+
+  Future<bool> _saveProfile() async {
+    FocusScope.of(context).unfocus();
+
+    return await UserController.changeUserInformation(_name.text, _birthday).then((registerSuccess) async {
+      if (registerSuccess) {
+        await DialogPopup.asyncOkDialog("Änderungen gespeichert", "Die Änderungen wurden erfolgreich an Xitem übermittlet");
+        return true;
+      } else {
+        await DialogPopup.asyncOkDialog("Änderungen konnten nicht gespeichert werden!", Api.errorMessage);
+        return false;
+      }
+    });
+  }
+
+  Future<bool> _changePassword() async {
+    FocusScope.of(context).unfocus();
+
+    if (_oldPassword.text == "" || _newPassword.text == "" || _repeatPassword.text == "") return false;
+
+    return await Api.changePassword(ChangePasswordRequest(_oldPassword.text, _newPassword.text, _repeatPassword.text)).then((success) async {
+      if (success) {
+        await DialogPopup.asyncOkDialog("Passwort geändert", "Die Änderungen wurden erfolgreich an Xitem übermittelt. Bitte melde dich erneut an.");
+        UserController.logout();
+        return true;
+      } else {
+        await DialogPopup.asyncOkDialog("Passwort konnten nicht gespeichert werden!", Api.errorMessage);
+        return false;
+      }
+    });
+  }
+
+  void _changeProfilePicture() async {
+    bool imagePicked = await _pickImage();
+    if (imagePicked) {
+      bool imageCopped = await _cropImage();
+
+      if (!imageCopped) {
+        setState(() {
+          DialogPopup.asyncOkDialog("Profilbild konnte nicht geändert werden!", "Es ist ein Fehler während der Bildauswahl aufgetreten, bitte versuch es erneut.");
+          _newAvatarImage = null;
+        });
+      } else {
+        DialogPopup.asyncLoadingDialog(_keyLoader, "Speichere Profilbild...");
+
+        if (_newAvatarImage != null) {
+          bool success = await UserController.changeAvatar(_newAvatarImage).catchError((e) {
+            Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+            return false;
+          });
+
+          await Future.delayed(const Duration(seconds: 1));
+          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+
+          if (!success)
+            DialogPopup.asyncOkDialog("Profilbild konnte nicht geändert werden!", Api.errorMessage);
+          else {
+            setState(() {});
+            DialogPopup.asyncOkDialog("Profilbild gespeichert", "Dein Profilbild wurde erfolgreich an Xitem übermittelt.");
+          }
+        }
+      }
+    }
+  }
+
+  Future<Null> _selectDate(BuildContext context) async {
+    final DateTime picked = await showDatePicker(
+        context: context,
+        errorFormatText: "Ungültiges Format",
+        helpText: "Geburtstag auswählen",
+        initialDatePickerMode: DatePickerMode.year,
+        useRootNavigator: false,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(1901, 1),
+        lastDate: DateTime.now(),
+        locale: Locale('de', 'DE'));
+    if (picked != null && picked != _birthday) {
+      _birthday = picked;
+      setState(() {
+        _birthdayText.text = birthdayFormat.format(picked);
+      });
+    }
+  }
+
+  Future<bool> _pickImage() async {
+    _pickedImage = null;
+    final pickedImage = await picker.getImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      _pickedImage = File(pickedImage.path);
+      return true;
+    }
+
+    return false;
+  }
+
+  Future<bool> _cropImage() async {
+    final File croppedFile = await ImageCropper.cropImage(
+      sourcePath: _pickedImage.path,
+      aspectRatioPresets: [
+        CropAspectRatioPreset.square,
+      ],
+      androidUiSettings:
+      AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
+      iosUiSettings: IOSUiSettings(
+        title: 'Profilbild anpassen',
+      ),
+      compressFormat: ImageCompressFormat.png,
+    );
+
+    if (croppedFile != null) {
+      _newAvatarImage = croppedFile;
+      return true;
+    }
+
+    return false;
   }
 }

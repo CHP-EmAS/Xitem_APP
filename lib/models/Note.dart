@@ -1,4 +1,4 @@
-import 'package:de/Controllers/ApiController.dart';
+import 'package:de/controllers/ApiController.dart';
 import 'package:flutter/cupertino.dart';
 
 class Note {

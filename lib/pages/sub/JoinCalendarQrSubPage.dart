@@ -2,34 +2,25 @@ import 'dart:convert';
 
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Widgets/icon_picker_widget.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
+import 'package:de/Widgets/icon_picker_widget.dart';
 import 'package:flutter/material.dart';
 
-class QRCodeCalenderScreen extends StatefulWidget {
-  const QRCodeCalenderScreen();
+class JoinCalendarQrSubPage extends StatefulWidget {
+  const JoinCalendarQrSubPage();
 
   @override
-  State<StatefulWidget> createState() {
-    return _QRCodeCalenderScreenState();
-  }
+  State<StatefulWidget> createState() => _JoinCalendarQrSubPageState();
 }
 
-class _QRCodeCalenderScreenState extends State<QRCodeCalenderScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
+class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
   bool _alert = true;
-
-  Color currentColor = Colors.amber;
-  IconData currentIcon = default_icons[0];
-
-  void changeIcon(IconData icon) => setState(() => currentIcon = icon);
+  Color _color = Colors.amber;
+  IconData _icon = default_icons[0];
 
   @override
   void initState() {
@@ -43,32 +34,7 @@ class _QRCodeCalenderScreenState extends State<QRCodeCalenderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scanQRCodeButton = LoadingButton("QR Code scannen", "Erfolgreich erstellt", Colors.amber, () async {
-      var options = ScanOptions(restrictFormat: [BarcodeFormat.qr], strings: {"cancel": "Abbrechen", "flash_on": "Licht an", "flash_off": "Licht aus"});
-
-      ScanResult codeScanner = await BarcodeScanner.scan(options: options); //barcode scanner
-
-      if (codeScanner.type == ResultType.Barcode) {
-        Map<String, dynamic> qrData = jsonDecode(codeScanner.rawContent);
-        if (qrData.containsKey("n") && qrData.containsKey("k")) {
-          ConfirmAction answer = await DialogPopup.asyncConfirmDialog("QR-Einladung annehmen?", "Möchtest du den Kalender\n${qrData["n"].toString()}\nbeitreten?");
-          if (answer == ConfirmAction.OK) {
-            if (await UserController.acceptCalendarInvitation(qrData["k"].toString(), currentColor, currentIcon)) {
-              _navigationService.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
-              return true;
-            } else {
-              await DialogPopup.asyncOkDialog("QR-Code Error!", Api.errorMessage);
-            }
-          }
-        } else {
-          await DialogPopup.asyncOkDialog("QR-Code Error!", "Der eingelesene QR-Code beinhaltet nicht die nötigen Daten um eine Kalender-Einladung zu verarbeiten!");
-        }
-      } else if (codeScanner.type == ResultType.Error) {
-        await DialogPopup.asyncOkDialog("Scanner Error", codeScanner.rawContent + "\n" + codeScanner.format.toString() + "\n" + codeScanner.formatNote);
-      }
-
-      return false;
-    });
+    final scanQRCodeButton = LoadingButton("QR Code scannen", "Erfolgreich erstellt", Colors.amber, _scanQrCode);
 
     return Container(
       child: ListView(
@@ -97,15 +63,15 @@ class _QRCodeCalenderScreenState extends State<QRCodeCalenderScreen> {
                       flex: 2,
                       child: MaterialButton(
                         onPressed: () {
-                          PickerPopup.showColorPickerDialog(currentColor).then((selectedColor) {
+                          PickerPopup.showColorPickerDialog(_color).then((selectedColor) {
                             if (selectedColor != null) {
                               setState(() {
-                                currentColor = selectedColor;
+                                _color = selectedColor;
                               });
                             }
                           });
                         },
-                        color: currentColor,
+                        color: _color,
                         textColor: Colors.white,
                         padding: EdgeInsets.all(16),
                         shape: CircleBorder(),
@@ -130,18 +96,10 @@ class _QRCodeCalenderScreenState extends State<QRCodeCalenderScreen> {
                     Expanded(
                       flex: 2,
                       child: IconButton(
-                        icon: Icon(currentIcon),
+                        icon: Icon(_icon),
                         color: Colors.white70,
                         iconSize: 40,
-                        onPressed: () {
-                          PickerPopup.showIconPickerDialog(currentIcon).then((selectedIcon) {
-                            if (selectedIcon != null) {
-                              setState(() {
-                                currentIcon = selectedIcon;
-                              });
-                            }
-                          });
-                        },
+                        onPressed: _showIconPicker,
                       ),
                     ),
                     Expanded(
@@ -199,5 +157,41 @@ class _QRCodeCalenderScreenState extends State<QRCodeCalenderScreen> {
         ],
       ),
     );
+  }
+
+  Future<bool> _scanQrCode() async {
+    var options = ScanOptions(restrictFormat: [BarcodeFormat.qr], strings: {"cancel": "Abbrechen", "flash_on": "Licht an", "flash_off": "Licht aus"});
+    ScanResult codeScanner = await BarcodeScanner.scan(options: options);
+
+    if (codeScanner.type == ResultType.Barcode) {
+      Map<String, dynamic> qrData = jsonDecode(codeScanner.rawContent);
+      if (qrData.containsKey("n") && qrData.containsKey("k")) {
+        ConfirmAction answer = await DialogPopup.asyncConfirmDialog("QR-Einladung annehmen?", "Möchtest du den Kalender\n${qrData["n"].toString()}\nbeitreten?");
+        if (answer == ConfirmAction.OK) {
+          if (await UserController.acceptCalendarInvitation(qrData["k"].toString(), _color, _icon)) {
+            Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
+            return true;
+          } else {
+            await DialogPopup.asyncOkDialog("QR-Code Error!", Api.errorMessage);
+          }
+        }
+      } else {
+        await DialogPopup.asyncOkDialog("QR-Code Error!", "Der eingelesene QR-Code beinhaltet nicht die nötigen Daten um eine Kalender-Einladung zu verarbeiten!");
+      }
+    } else if (codeScanner.type == ResultType.Error) {
+      await DialogPopup.asyncOkDialog("Scanner Error", codeScanner.rawContent + "\n" + codeScanner.format.toString() + "\n" + codeScanner.formatNote);
+    }
+
+    return false;
+  }
+
+  void _showIconPicker() {
+    PickerPopup.showIconPickerDialog(_icon).then((selectedIcon) {
+      if (selectedIcon != null) {
+        setState(() {
+          _icon = selectedIcon;
+        });
+      }
+    });
   }
 }

@@ -1,35 +1,28 @@
 import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Widgets/icon_picker_widget.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
+import 'package:de/Widgets/icon_picker_widget.dart';
 import 'package:flutter/material.dart';
 
-class JoinCalendarScreen extends StatefulWidget {
-  const JoinCalendarScreen();
+class JoinCalendarSubPage extends StatefulWidget {
+  const JoinCalendarSubPage();
 
   @override
   State<StatefulWidget> createState() {
-    return _JoinCalendarScreenState();
+    return _JoinCalendarSubPageState();
   }
 }
 
-class _JoinCalendarScreenState extends State<JoinCalendarScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
-
+class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
   final _id = TextEditingController();
   final _password = TextEditingController();
 
   bool _alert = true;
-
-  Color currentColor = Colors.amber;
-  IconData currentIcon = default_icons[0];
-
-  void changeIcon(IconData icon) => setState(() => currentIcon = icon);
+  Color _color = Colors.amber;
+  IconData _icon = default_icons[0];
 
   @override
   void initState() {
@@ -83,9 +76,9 @@ class _JoinCalendarScreenState extends State<JoinCalendarScreen> {
 
       if (_id.text == "" || _password.text == "") return false;
 
-      return await UserController.joinCalendar(_id.text, _password.text, currentColor, currentIcon).then((success) async {
+      return await UserController.joinCalendar(_id.text, _password.text, _color, _icon).then((success) async {
         if (success) {
-          _navigationService.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
           return true;
         } else {
           DialogPopup.asyncOkDialog("Dem Kalender konnten nicht beigetreten werden!", Api.errorMessage);
@@ -136,15 +129,15 @@ class _JoinCalendarScreenState extends State<JoinCalendarScreen> {
                         onPressed: () {
                           FocusScope.of(context).unfocus();
 
-                          PickerPopup.showColorPickerDialog(currentColor).then((selectedColor) {
+                          PickerPopup.showColorPickerDialog(_color).then((selectedColor) {
                             if (selectedColor != null) {
                               setState(() {
-                                currentColor = selectedColor;
+                                _color = selectedColor;
                               });
                             }
                           });
                         },
-                        color: currentColor,
+                        color: _color,
                         textColor: Colors.white,
                         padding: EdgeInsets.all(16),
                         shape: CircleBorder(),
@@ -169,15 +162,15 @@ class _JoinCalendarScreenState extends State<JoinCalendarScreen> {
                     Expanded(
                       flex: 2,
                       child: IconButton(
-                        icon: Icon(currentIcon),
+                        icon: Icon(_icon),
                         color: Colors.white70,
                         iconSize: 40,
                         onPressed: () {
                           FocusScope.of(context).unfocus();
-                          PickerPopup.showIconPickerDialog(currentIcon).then((selectedIcon) {
+                          PickerPopup.showIconPickerDialog(_icon).then((selectedIcon) {
                             if (selectedIcon != null) {
                               setState(() {
-                                currentIcon = selectedIcon;
+                                _icon = selectedIcon;
                               });
                             }
                           });

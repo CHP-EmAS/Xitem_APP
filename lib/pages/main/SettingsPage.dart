@@ -1,29 +1,23 @@
 import 'package:de/Controllers/ApiController.dart';
 import 'package:de/Controllers/HolidayListController.dart';
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/SettingController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-class SettingsScreen extends StatefulWidget {
+class SettingsPage extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() {
-    return _SettingsScreenState();
-  }
+  State<StatefulWidget> createState() => _SettingsPageState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
-  final NavigationService _navigationService = locator<NavigationService>();
-
+class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    loadSettings();
+    _loadSettings();
   }
 
   @override
@@ -41,23 +35,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   bool _showBirthdaysOnHolidayScreen;
   bool _showNewVotingOnEventScreen;
 
-
-  void loadSettings() async {
-    setState(() {
-      settingsLoaded = false;
-    });
-
-    _timeZone = await SettingController.getTimeZone();
-    _holidayStateCode = await SettingController.getHolidayStateCode();
-    _eventStandardColor = await SettingController.getEventStandardColor();
-    _showBirthdaysOnHolidayScreen = await SettingController.getShowBirthdaysOnHolidayScreen();
-    _showNewVotingOnEventScreen = await SettingController.getShowNewVotingOnEventScreen();
-
-    setState(() {
-      settingsLoaded = true;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
 
@@ -66,7 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            _navigationService.pop();
+            Navigator.pop(context);
           },
         ),
         title: Text(
@@ -84,8 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
           children: <Widget>[
             buildHeadline("Allgemein"),
-            buildSetting(Icon(Icons.public, size: 30,), "Zeitzone", _timeZone.name, () => changeTimezone()),
-            buildSetting(Icon(Icons.location_pin, size: 30,), "Bundesland für Feiertage", HolidayController.getStateName(_holidayStateCode), () => changeHolidayStateCode()),
+            buildSetting(Icon(Icons.public, size: 30,), "Zeitzone", _timeZone.name, () => _changeTimezone()),
+            buildSetting(Icon(Icons.location_pin, size: 30,), "Bundesland für Feiertage", HolidayController.getStateName(_holidayStateCode), () => _changeHolidayStateCode()),
             SizedBox(height: 18,),
 
             buildHeadline("Erscheinungsbild"),
@@ -112,10 +89,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
             buildHeadline("Profil"),
             buildSetting(Icon(Icons.info_outline, size: 30, color: Colors.blue,), "Profildaten anfordern", "", (() {
-              sendProfileInformationMail();
+              _sendProfileInformationMail();
             })),
             buildSetting(Icon(Icons.delete, size: 30, color: Colors.red,), "Profil Löschung anfordern", "", (() {
-              sendProfileDeletionMail();
+              _sendProfileDeletionMail();
             })),
             SizedBox(height: 18,),
 
@@ -215,7 +192,23 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
 
-  void changeTimezone() async {
+  void _loadSettings() async {
+    setState(() {
+      settingsLoaded = false;
+    });
+
+    _timeZone = SettingController.getTimeZone();
+    _holidayStateCode = SettingController.getHolidayStateCode();
+    _eventStandardColor = SettingController.getEventStandardColor();
+    _showBirthdaysOnHolidayScreen = SettingController.getShowBirthdaysOnHolidayScreen();
+    _showNewVotingOnEventScreen = SettingController.getShowNewVotingOnEventScreen();
+
+    setState(() {
+      settingsLoaded = true;
+    });
+  }
+
+  void _changeTimezone() async {
     tz.Location newLocation = await PickerPopup.showTimezonePickerDialog(_timeZone);
 
     GlobalKey<State> _keyLoader = new GlobalKey<State>();
@@ -243,7 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
   }
 
-  void changeHolidayStateCode() async {
+  void _changeHolidayStateCode() async {
     StateCode newStateCode = await PickerPopup.showStateCodePickerDialog(_holidayStateCode);
 
     GlobalKey<State> _keyLoader = new GlobalKey<State>();
@@ -271,7 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
   }
 
-  void sendProfileInformationMail() async {
+  void _sendProfileInformationMail() async {
     final answer = await DialogPopup.asyncConfirmDialog("Profildaten anfordern?", "Hier kannst du alle Daten die Xitem über dich gespeichert hat anfordern. Die Daten werden dir per Mail an\n" + UserController.user.email + "\ngesendet. Möchtest du fortfahren?");
 
     if (answer == ConfirmAction.OK) {
@@ -287,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
   }
 
-  void sendProfileDeletionMail() async {
+  void _sendProfileDeletionMail() async {
     final answer = await DialogPopup.asyncConfirmDialog(
         "Profil löschen?",
         "Hier kannst du dein Xitem Account löschen. Nach der Löschung kann dein Account nicht mehr wiederhergestellt werden. Die Löschung muss per Mail bestätigt werden. Wir senden die Mail an\n" + UserController.user.email + "\nMöchtest du fortfahren?");

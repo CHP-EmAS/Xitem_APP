@@ -1,24 +1,20 @@
-import 'package:de/Controllers/NavigationController.dart';
 import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Screens/Sub_Screens/create_calendar_screen.dart';
-import 'package:de/Screens/Sub_Screens/join_calendar_screen.dart';
-import 'package:de/Screens/Sub_Screens/join_calender_via_qr_code_screen.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
+import 'package:de/pages/sub/CreateCalendarSubPage.dart';
+import 'package:de/pages/sub/JoinCalendarQrSubPage.dart';
+import 'package:de/pages/sub/JoinCalendarSubPage.dart';
 import 'package:flutter/material.dart';
 
-class NewCalendarScreen extends StatefulWidget {
-  const NewCalendarScreen();
+class NewCalendarPage extends StatefulWidget {
+  const NewCalendarPage();
 
   @override
   State<StatefulWidget> createState() {
-    return _NewCalendarScreenState();
+    return _NewCalendarPageState();
   }
 }
 
-class _NewCalendarScreenState extends State<NewCalendarScreen> with SingleTickerProviderStateMixin {
-  final NavigationService _navigationService = locator<NavigationService>();
-
-  final List<Tab> myTabs = <Tab>[
+class _NewCalendarPageState extends State<NewCalendarPage> with SingleTickerProviderStateMixin {
+  final List<Tab> _myTabs = <Tab>[
     Tab(child: Text("Erstellen", style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16))),
     Tab(child: Text("Beitreten", style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16))),
     Tab(child: Text("QR Code", style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16))),
@@ -29,7 +25,7 @@ class _NewCalendarScreenState extends State<NewCalendarScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(vsync: this, length: myTabs.length);
+    _tabController = TabController(vsync: this, length: _myTabs.length);
   }
 
   @override
@@ -45,12 +41,12 @@ class _NewCalendarScreenState extends State<NewCalendarScreen> with SingleTicker
           leading: BackButton(
             color: ThemeController.activeTheme().iconColor,
             onPressed: () {
-              _navigationService.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
             },
           ),
           bottom: TabBar(
             controller: _tabController,
-            tabs: myTabs,
+            tabs: _myTabs,
           ),
           title: Text(
             "Neuen Kalender hinzufügen",
@@ -61,6 +57,6 @@ class _NewCalendarScreenState extends State<NewCalendarScreen> with SingleTicker
           elevation: 0,
         ),
         backgroundColor: ThemeController.activeTheme().backgroundColor,
-        body: TabBarView(controller: _tabController, children: [CreateCalendarScreen(), JoinCalendarScreen(), QRCodeCalenderScreen()]));
+        body: TabBarView(controller: _tabController, children: [CreateCalendarSubPage(), JoinCalendarSubPage(), JoinCalendarQrSubPage()]));
   }
 }

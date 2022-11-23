@@ -1,37 +1,30 @@
-import 'package:de/Controllers/NavigationController.dart';
+import 'package:de/Controllers/ApiController.dart';
 import 'package:de/Controllers/ThemeController.dart';
 import 'package:de/Controllers/UserController.dart';
-import 'file:///C:/Users/Clemens/Documents/AndroidStudioProjects/live_list/lib/Controller/locator.dart';
 import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'file:///C:/Users/Clemens/Documents/Development/AndroidStudioProjects/xitem/lib/Widgets/icon_picker_widget.dart';
 import 'package:de/Widgets/Dialogs/picker_popups.dart';
 import 'package:de/Widgets/buttons/loading_button_widget.dart';
+import 'package:de/Widgets/icon_picker_widget.dart';
 import 'package:flutter/material.dart';
 
-import '../../Controllers/ApiController.dart';
-
-class CreateCalendarScreen extends StatefulWidget {
-  const CreateCalendarScreen();
+class CreateCalendarSubPage extends StatefulWidget {
+  const CreateCalendarSubPage();
 
   @override
   State<StatefulWidget> createState() {
-    return _CreateCalendarScreenState();
+    return _CreateCalendarSubPageState();
   }
 }
 
-class _CreateCalendarScreenState extends State<CreateCalendarScreen> {
-  final NavigationService _navigationService = locator<NavigationService>();
+class _CreateCalendarSubPageState extends State<CreateCalendarSubPage> {
 
   final _name = TextEditingController();
   final _password = TextEditingController();
+
   bool _canJoin = true;
-
   bool _alert = true;
-
-  Color currentColor = Colors.amber;
-  IconData currentIcon = default_icons[0];
-
-  void changeIcon(IconData icon) => setState(() => currentIcon = icon);
+  Color _color = Colors.amber;
+  IconData _icon = default_icons[0];
 
   @override
   void initState() {
@@ -45,7 +38,7 @@ class _CreateCalendarScreenState extends State<CreateCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+    final TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
 
     final nameField = TextField(
       obscureText: false,
@@ -78,10 +71,10 @@ class _CreateCalendarScreenState extends State<CreateCalendarScreen> {
 
       if (_name.text == "" || _password.text == "") return false;
 
-      return await UserController.createCalendar(_name.text, _password.text, _canJoin, currentColor, currentIcon).then((calendarHash) async {
+      return await UserController.createCalendar(_name.text, _password.text, _canJoin, _color, _icon).then((calendarHash) async {
         if (calendarHash != null) {
           await DialogPopup.asyncCalendarInvitationDialog(calendarHash);
-          _navigationService.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(context,'/home/calendar', (route) => false);
           return true;
         } else {
           DialogPopup.asyncOkDialog("Der Kalender konnten nicht erstellt werden!", Api.errorMessage);
@@ -161,15 +154,15 @@ class _CreateCalendarScreenState extends State<CreateCalendarScreen> {
                         onPressed: () {
                           FocusScope.of(context).unfocus();
 
-                          PickerPopup.showColorPickerDialog(currentColor).then((selectedColor) {
+                          PickerPopup.showColorPickerDialog(_color).then((selectedColor) {
                             if (selectedColor != null) {
                               setState(() {
-                                currentColor = selectedColor;
+                                _color = selectedColor;
                               });
                             }
                           });
                         },
-                        color: currentColor,
+                        color: _color,
                         textColor: ThemeController.activeTheme().textColor,
                         padding: EdgeInsets.all(16),
                         shape: CircleBorder(),
@@ -194,15 +187,15 @@ class _CreateCalendarScreenState extends State<CreateCalendarScreen> {
                     Expanded(
                       flex: 2,
                       child: IconButton(
-                        icon: Icon(currentIcon),
+                        icon: Icon(_icon),
                         color: Colors.white70,
                         iconSize: 40,
                         onPressed: () {
                           FocusScope.of(context).unfocus();
-                          PickerPopup.showIconPickerDialog(currentIcon).then((selectedIcon) {
+                          PickerPopup.showIconPickerDialog(_icon).then((selectedIcon) {
                             if (selectedIcon != null) {
                               setState(() {
-                                currentIcon = selectedIcon;
+                                _icon = selectedIcon;
                               });
                             }
                           });

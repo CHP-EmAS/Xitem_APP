@@ -1,4 +1,4 @@
-import 'package:de/Controllers/SettingController.dart';
+import 'package:de/controllers/SettingController.dart';
 import 'package:flutter/material.dart';
 
 enum XitemTheme { Dark, Light }

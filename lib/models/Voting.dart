@@ -1,4 +1,4 @@
-import 'package:de/Controllers/ApiController.dart';
+import 'package:de/controllers/ApiController.dart';
 
 class Voting {
   Voting(this.votingID, this.calendarID, this.ownerID, this.title, this.multipleChoice, this.abstentionAllowed, this.userHasVoted, this.numberUsersWhoHaveVoted, this.choices, this.creationDate);

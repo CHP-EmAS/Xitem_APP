@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:de/Controllers/ApiController.dart';
+import 'package:de/controllers/ApiController.dart';
 
 class PublicUser {
   PublicUser(this.userID, this.name, this.birthday, this.role, this.avatar);
