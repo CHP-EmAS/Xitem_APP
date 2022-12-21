@@ -1,28 +1,29 @@
-import 'package:de/controllers/SettingController.dart';
+import 'package:xitem/controllers/SettingController.dart';
 import 'package:flutter/material.dart';
 
-enum XitemTheme { Dark, Light }
+enum XitemTheme { dark, light }
 
 class AppTheme {
-  AppTheme(
-      this.themeBrightness,
-      this.globalAccentColor,
-      this.globalCursorColor,
-      this.backgroundColor,
-      this.foregroundColor,
-      this.cardColor,
-      this.cardInfoColor,
-      this.cardSmallInfoColor,
-      this.textColor,
-      this.iconColor,
-      this.actionButtonColor,
-      this.infoDialogBackgroundColor,
-      this.infoDialogTextColor,
-      this.menuPopupBackgroundColor,
-      this.menuPopupTextColor,
-      this.menuPopupIconColor,
-      this.headlineColor,
-      this.dividerColor);
+  AppTheme({
+    required this.themeBrightness,
+    required this.globalAccentColor,
+    required this.globalCursorColor,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.cardColor,
+    required this.cardInfoColor,
+    required this.cardSmallInfoColor,
+    required this.textColor,
+    required this.iconColor,
+    required this.actionButtonColor,
+    required this.infoDialogBackgroundColor,
+    required this.infoDialogTextColor,
+    required this.menuPopupBackgroundColor,
+    required this.menuPopupTextColor,
+    required this.menuPopupIconColor,
+    required this.headlineColor,
+    required this.dividerColor
+  });
 
   final Brightness themeBrightness;
 
@@ -53,22 +54,96 @@ class AppTheme {
 }
 
 class ThemeController {
-  static final AppTheme _lightTheme = new AppTheme(Brightness.light, Colors.amber, Colors.amber, Colors.white, Colors.blue, Color.fromARGB(255, 211, 211, 211), Colors.black, Colors.grey[800],
-      Colors.black, Colors.black, Colors.amber, Colors.white30, Colors.black, Colors.black, Colors.white, Colors.white, Colors.grey, Colors.grey[800]);
+  static final  AppTheme _lightTheme = AppTheme(
+    themeBrightness: Brightness.light,
+    globalAccentColor: Colors.amber,
+    globalCursorColor: Colors.amber,
+    backgroundColor: Colors.white,
+    foregroundColor: Colors.blue,
+    cardColor: const Color.fromARGB(255, 211, 211, 211),
+    cardInfoColor: Colors.black,
+    cardSmallInfoColor: Colors.grey[800]!,
+    textColor: Colors.black,
+    iconColor: Colors.black,
+    actionButtonColor: Colors.amber,
+    infoDialogBackgroundColor: Colors.white30,
+    infoDialogTextColor: Colors.black,
+    menuPopupBackgroundColor: Colors.black,
+    menuPopupTextColor: Colors.white,
+    menuPopupIconColor: Colors.white,
+    headlineColor: Colors.grey,
+    dividerColor: Colors.grey[800]!
+  );
 
-  static final AppTheme _darkTheme = new AppTheme(Brightness.dark, Colors.amber, Colors.amber, Colors.grey[900], Colors.grey[850], Color.fromARGB(255, 56, 56, 56), Colors.white, Colors.grey,
-      Colors.white, Colors.white, Colors.amber, Colors.grey[900], Colors.white, Colors.white, Colors.black, Colors.black, Colors.grey, Colors.grey[800]);
+  static final AppTheme _darkTheme = AppTheme(
+      themeBrightness: Brightness.dark,
+      globalAccentColor: Colors.amber,
+      globalCursorColor: Colors.amber,
+      backgroundColor: Colors.grey.shade900,
+      foregroundColor: const Color(0xFF303030),
+      cardColor: const Color.fromARGB(255, 56, 56, 56),
+      cardInfoColor: Colors.white,
+      cardSmallInfoColor: Colors.grey,
+      textColor: Colors.white,
+      iconColor: Colors.white,
+      actionButtonColor: Colors.amber,
+      infoDialogBackgroundColor: Colors.grey.shade900,
+      infoDialogTextColor: Colors.white,
+      menuPopupBackgroundColor: Colors.white,
+      menuPopupTextColor: Colors.black,
+      menuPopupIconColor: Colors.black,
+      headlineColor: Colors.grey,
+      dividerColor: Colors.grey.shade800
+  );
+
+  static const List<Color> eventColors = [
+    Colors.red,
+    Colors.pink,
+    Colors.purple,
+    Colors.deepPurple,
+    Colors.indigo,
+    Colors.blue,
+    Colors.lightBlue,
+    Colors.cyan,
+    Colors.teal,
+    Colors.green,
+    Colors.lightGreen,
+    Colors.lime,
+    Colors.yellow,
+    Colors.amber,
+    Colors.orange,
+    Colors.deepOrange,
+    Colors.brown,
+    Colors.grey,
+    Colors.blueGrey,
+    Colors.black,
+  ];
+  static const int defaultEventColorIndex = 13;
+
+  static const List<Color> noteColors = [
+    Color(0xFFFFF476),
+    Color(0xFFCDFF90),
+    Color(0xFFA7FEEB),
+    Color(0xFFCBF0F8),
+    Color(0xFFAFCBFA),
+    Color(0xFFD7AEFC),
+    Color(0xFFFDCFE9),
+    Color(0xFFE6C9A9),
+    Color(0xFFF28C82),
+    Color(0xFFE9EAEE),
+  ];
+  static const int defaultNoteColorIndex = 0;
 
   static AppTheme _currentTheme = _darkTheme;
 
-  static void loadThemeFromSettings() {
-    XitemTheme theme = SettingController.getTheme();
+  static void loadThemeFromSettings(SettingController settingController) {
+    XitemTheme theme = settingController.getTheme();
 
     switch (theme) {
-      case XitemTheme.Light:
+      case XitemTheme.light:
         _currentTheme = _lightTheme;
         break;
-      case XitemTheme.Dark:
+      case XitemTheme.dark:
       default:
         _currentTheme = _darkTheme;
         break;
@@ -76,4 +151,20 @@ class ThemeController {
   }
 
   static AppTheme activeTheme() => _currentTheme;
+
+  static Color getEventColor(int index) {
+    if(index < eventColors.length) {
+      return eventColors[index];
+    }
+
+    return Colors.amber;
+  }
+
+  static Color getNoteColor(int index) {
+    if(index < noteColors.length) {
+      return noteColors[index];
+    }
+
+    return const Color(0xFFFFF476);
+  }
 }

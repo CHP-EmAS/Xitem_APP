@@ -1,16 +1,18 @@
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/pages/sub/CreateCalendarSubPage.dart';
-import 'package:de/pages/sub/JoinCalendarQrSubPage.dart';
-import 'package:de/pages/sub/JoinCalendarSubPage.dart';
+import 'package:xitem/controllers/CalendarController.dart';
+import 'package:xitem/controllers/StateController.dart';
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/pages/sub/CreateCalendarSubPage.dart';
+import 'package:xitem/pages/sub/JoinCalendarQrSubPage.dart';
+import 'package:xitem/pages/sub/JoinCalendarSubPage.dart';
 import 'package:flutter/material.dart';
 
 class NewCalendarPage extends StatefulWidget {
-  const NewCalendarPage();
+  const NewCalendarPage(this._calendarController, {super.key});
+
+  final CalendarController _calendarController;
 
   @override
-  State<StatefulWidget> createState() {
-    return _NewCalendarPageState();
-  }
+  State<StatefulWidget> createState() => _NewCalendarPageState();
 }
 
 class _NewCalendarPageState extends State<NewCalendarPage> with SingleTickerProviderStateMixin {
@@ -20,7 +22,7 @@ class _NewCalendarPageState extends State<NewCalendarPage> with SingleTickerProv
     Tab(child: Text("QR Code", style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16))),
   ];
 
-  TabController _tabController;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -41,7 +43,7 @@ class _NewCalendarPageState extends State<NewCalendarPage> with SingleTickerProv
           leading: BackButton(
             color: ThemeController.activeTheme().iconColor,
             onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
+              StateController.navigatorKey.currentState?.pop();
             },
           ),
           bottom: TabBar(
@@ -57,6 +59,6 @@ class _NewCalendarPageState extends State<NewCalendarPage> with SingleTickerProv
           elevation: 0,
         ),
         backgroundColor: ThemeController.activeTheme().backgroundColor,
-        body: TabBarView(controller: _tabController, children: [CreateCalendarSubPage(), JoinCalendarSubPage(), JoinCalendarQrSubPage()]));
+        body: TabBarView(controller: _tabController, children: [CreateCalendarSubPage(widget._calendarController), JoinCalendarSubPage(widget._calendarController), JoinCalendarQrSubPage(widget._calendarController)]));
   }
 }

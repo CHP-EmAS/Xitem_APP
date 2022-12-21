@@ -1,26 +1,34 @@
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Models/User.dart';
+import 'dart:io';
+
+import 'package:xitem/controllers/StateController.dart';
+import 'package:xitem/controllers/ThemeController.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:xitem/models/User.dart';
+import 'package:xitem/utils/AvatarImageProvider.dart';
 
 
 class ProfilePage extends StatelessWidget {
 
-  ProfilePage({Key key, @required this.appUser});
+  ProfilePage(this._authenticatedUser, {super.key});
 
-  final dateOnlyFormat = new DateFormat.yMMMMd('de_DE');
-  final AppUser appUser;
+  final _dateOnlyFormat = DateFormat.yMMMMd('de_DE');
+  final AuthenticatedUser _authenticatedUser;
 
   @override
   Widget build(BuildContext context) {
-    imageCache.clear();
+    String birthday = "-";
+    DateTime? userBirthday = _authenticatedUser.birthday;
+    if(userBirthday != null) {
+      birthday = _dateOnlyFormat.format(userBirthday);
+    }
 
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            Navigator.pop(context);
+            StateController.navigatorKey.currentState?.pop(context);
           },
         ),
         title: Text(
@@ -33,23 +41,23 @@ class ProfilePage extends StatelessWidget {
         backgroundColor: ThemeController.activeTheme().foregroundColor,
         elevation: 3,
         actions: <Widget>[
-          new IconButton(
+          IconButton(
             icon: Icon(Icons.settings, color: ThemeController.activeTheme().iconColor, size: 30),
             onPressed: () {
-              Navigator.pushNamed(context, '/editProfile');
+              StateController.navigatorKey.currentState?.pushNamed('/editProfile');
             },
           ),
         ],
       ),
       backgroundColor: ThemeController.activeTheme().backgroundColor,
       body: Padding(
-        padding: EdgeInsets.fromLTRB(30, 40, 30, 0),
+        padding: const EdgeInsets.fromLTRB(30, 40, 30, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Center(
               child: CircleAvatar(
-                backgroundImage: FileImage(appUser.avatar),
+                backgroundImage: AvatarImageProvider.get(_authenticatedUser.avatar),
                 radius: 60,
               ),
             ),
@@ -62,12 +70,12 @@ class ProfilePage extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(
-              appUser.name != null ? appUser.name : "-",
+              _authenticatedUser.name,
               style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, letterSpacing: 2, fontSize: 25, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text(
               "Geburtstag",
               style: TextStyle(
@@ -76,12 +84,12 @@ class ProfilePage extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(
-              appUser.birthday != null ? dateOnlyFormat.format(appUser.birthday) : "-",
+              birthday,
               style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, letterSpacing: 2, fontSize: 25, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text(
               "Status",
               style: TextStyle(
@@ -90,21 +98,21 @@ class ProfilePage extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Text(
-              appUser.role != null ? appUser.role : "-",
+              _authenticatedUser.role,
               style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, letterSpacing: 2, fontSize: 25, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Row(
               children: <Widget>[
                 Icon(
                   Icons.alternate_email,
                   color: ThemeController.activeTheme().headlineColor,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
-                    appUser.email != null ? appUser.email : "-",
+                    _authenticatedUser.email,
                     style: TextStyle(
                         color: ThemeController.activeTheme().headlineColor,
                         fontSize: 18,
@@ -113,16 +121,16 @@ class ProfilePage extends StatelessWidget {
                 )
               ],
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Row(
               children: <Widget>[
                 Icon(
                   Icons.star_border,
                   color: ThemeController.activeTheme().headlineColor,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
-                    appUser.registeredAt != null ? appUser.registeredAt : "-",
+                    _dateOnlyFormat.format(_authenticatedUser.registeredAt),
                     style: TextStyle(
                         color: ThemeController.activeTheme().headlineColor,
                         fontSize: 18,

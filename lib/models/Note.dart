@@ -1,4 +1,3 @@
-import 'package:de/controllers/ApiController.dart';
 import 'package:flutter/cupertino.dart';
 
 class Note {
@@ -9,7 +8,7 @@ class Note {
   String title;
   String content;
 
-  Color color;
+  int color;
   bool pinned;
 
   final String associatedCalendar;
@@ -17,20 +16,4 @@ class Note {
 
   DateTime creationDate;
   DateTime modificationDate;
-
-  Future<void> reload() async {
-    Note reloadedNote = await Api.loadSingleNote(associatedCalendar, noteID);
-
-    if (reloadedNote == null) return;
-
-    if (this.noteID != reloadedNote.noteID) {
-      print("Unexpected Error when reloading a Note, IDs not equal!");
-      return;
-    }
-
-    this.creationDate = reloadedNote.creationDate;
-
-    this.title = reloadedNote.title;
-    this.content = reloadedNote.content;
-  }
 }

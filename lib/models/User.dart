@@ -1,59 +1,25 @@
 import 'dart:io';
 
-import 'package:de/controllers/ApiController.dart';
+class User {
+  User(this._id, this.name, this.birthday, this._role, this.avatar);
 
-class PublicUser {
-  PublicUser(this.userID, this.name, this.birthday, this.role, this.avatar);
-
-  final String userID;
+  final String _id;
   String name;
+  DateTime? birthday;
+  final String _role;
+  File? avatar;
 
-  DateTime birthday;
-
-  String role;
-  File avatar;
-
-  reload() async {
-    PublicUser reloadedUser = await Api.loadPublicUserInformation(userID);
-
-    if (reloadedUser == null) {
-      print("Error while reloading User: " + this.userID);
-      return;
-    }
-
-    this.name = reloadedUser.name;
-    this.birthday = reloadedUser.birthday;
-    this.role = reloadedUser.role;
-    this.avatar = reloadedUser.avatar;
-  }
+  String get id => _id;
+  String get role => _role;
 }
 
-class AppUser {
-  AppUser(this.userID, this.name, this.email, this.birthday, this.role, this.registeredAt, this.avatar);
+class AuthenticatedUser extends User {
+  AuthenticatedUser(User userInfo, this._email, this._registeredAt)
+      : super(userInfo.id, userInfo.name, userInfo.birthday, userInfo._role, userInfo.avatar);
 
-  final String userID;
-  String email;
-  String name;
+  final String _email;
+  final DateTime _registeredAt;
 
-  DateTime birthday;
-  DateTime registeredAt;
-
-  String role;
-  File avatar;
-
-  reload() async {
-    AppUser reloadedUser = await Api.loadAppUserInformation(userID);
-
-    if (reloadedUser == null) {
-      print("Error while reloading User: " + this.userID);
-      return;
-    }
-
-    this.name = reloadedUser.name;
-    this.email = reloadedUser.email;
-    this.birthday = reloadedUser.birthday;
-    this.registeredAt = reloadedUser.registeredAt;
-    this.role = reloadedUser.role;
-    this.avatar = reloadedUser.avatar;
-  }
+  String get email => _email;
+  DateTime get registeredAt => _registeredAt;
 }

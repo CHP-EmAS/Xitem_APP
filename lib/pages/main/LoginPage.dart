@@ -1,15 +1,18 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Widgets/Buttons/loading_button_widget.dart';
-import 'package:de/Widgets/Dialogs/dialog_popups.dart';
+import 'package:xitem/api/AuthenticationApi.dart';
+import 'package:xitem/controllers/StateController.dart';
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/utils/ApiResponseMapper.dart';
+import 'package:xitem/widgets/Buttons/LoadingButton.dart';
+import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage(this._authenticationApi, {super.key});
+
+  final AuthenticationApi _authenticationApi;
+
   @override
-  State<StatefulWidget> createState() {
-    return _LoginPageState();
-  }
+  State<StatefulWidget> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -35,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+    const TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
 
     final emailField = TextField(
       obscureText: false,
@@ -44,9 +47,9 @@ class _LoginPageState extends State<LoginPage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "E-Mail",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -57,9 +60,9 @@ class _LoginPageState extends State<LoginPage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Passwort",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -67,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       if (_wrongLogin) {
         return TextButton(
           onPressed: () => _forgotPasswordClick,
-          child: Text(
+          child: const Text(
             'Passwort vergessen?',
             style: TextStyle(
               fontSize: 16,
@@ -76,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       } else {
-        return SizedBox(height: 10);
+        return const SizedBox(height: 10);
       }
     }
 
@@ -94,59 +97,54 @@ class _LoginPageState extends State<LoginPage> {
       ),
       backgroundColor: ThemeController.activeTheme().backgroundColor,
       body: Center(
-        child: Container(
-          child: ListView(
-            padding: const EdgeInsets.all(36),
-            children: <Widget>[
-              SizedBox(
-                height: 160.0,
-                child: Image.asset(
-                  "images/logo_hell.png",
-                  fit: BoxFit.contain,
+        child: ListView(
+          padding: const EdgeInsets.all(36),
+          children: <Widget>[
+            SizedBox(
+              height: 160.0,
+              child: Image.asset(
+                "images/logo_hell.png",
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 30.0),
+            emailField,
+            const SizedBox(height: 25.0),
+            passwordField,
+            forgetPasswordText(),
+            const SizedBox(height: 25.0),
+            LoadingButton("Anmelden", "Anmelden", Colors.amber, _loginClick),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+            Text(
+              "Noch kein Account?",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16),
+            ),
+            TextButton(
+              child: const Text(
+                'Registrieren',
+                style: TextStyle(
+                  color: Colors.blueAccent,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
-              SizedBox(height: 30.0),
-              emailField,
-              SizedBox(height: 25.0),
-              passwordField,
-              forgetPasswordText(),
-              SizedBox(height: 25.0),
-              Container(
-                child: LoadingButton("Anmelden", "Anmelden", Colors.amber, _loginClick),
+              onPressed: () {
+                StateController.navigatorKey.currentState?.pushNamed('/register');
+              },
+            )
+              ],
+            ),
+            Center(
+              child: Text(
+                _errorMessage,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
               ),
-              Container(
-                  child: Row(
-                children: <Widget>[
-                  Text(
-                    "Noch kein Account?",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: ThemeController.activeTheme().textColor, fontSize: 16),
-                  ),
-                  TextButton(
-                    child: Text(
-                      'Registrieren',
-                      style: TextStyle(
-                        color: Colors.blueAccent,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                  )
-                ],
-                mainAxisAlignment: MainAxisAlignment.center,
-              )),
-              Center(
-                child: Text(
-                  _errorMessage,
-                  style: TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              )
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );
@@ -155,30 +153,33 @@ class _LoginPageState extends State<LoginPage> {
   Future<bool> _loginClick() async {
     if (_email.text == "" || _password.text == "") return false;
 
-    return await UserController.login(_email.text, _password.text).then((loginSuccess) {
-      if (loginSuccess) {
-        Navigator.popAndPushNamed(context, '/startup');
-        return true;
-      } else {
+    return await StateController.remoteLogin(_email.text, _password.text).then((loginResponse) {
+      if(loginResponse != ResponseCode.success) {
         setState(() {
-          _errorMessage = Api.errorMessage;
+          _errorMessage = "Authentifizierung fehlgeschlagen";
           _lastTryEmail = _email.text;
           _wrongLogin = true;
         });
+
         return false;
       }
+
+      StateController.navigatorKey.currentState?.popAndPushNamed('/startup');
+      return true;
     });
   }
 
   void _forgotPasswordClick() async {
     if (_lastTryEmail != "") {
-      ConfirmAction answer = await DialogPopup.asyncConfirmDialog("Passwort zurücksetzen", "Möchtest du einen Wiederherstellungscode an\n" + _lastTryEmail + "\nsenden.");
+      ConfirmAction? answer = await StandardDialog.confirmDialog("Passwort zurücksetzen", "Möchtest du einen Wiederherstellungscode an\n$_lastTryEmail\nsenden?");
 
-      if (answer == ConfirmAction.OK) {
-        if (await Api.sendPasswordEmail(_lastTryEmail)) {
-          await DialogPopup.asyncOkDialog("E-Mail gesendet", "Wenn diese E-Mail in unserem System hinterlegt ist, wurde ein Wiederherstellungscode gesendet.");
+      if (answer == ConfirmAction.ok) {
+        ResponseCode sendPassEmail = await widget._authenticationApi.sendPasswordEmail(_lastTryEmail);
+
+        if (sendPassEmail == ResponseCode.success) {
+          await StandardDialog.okDialog("E-Mail gesendet", "Wenn diese E-Mail in unserem System gespeichert ist, wurde ein Wiederherstellungscode gesendet.");
         } else {
-          await DialogPopup.asyncOkDialog("E-Mail nicht gesendet", "Es ist ein Fehler aufgetreten, versuch es später erneut.");
+          await StandardDialog.okDialog("E-Mail nicht gesendet", "Es ist ein Fehler aufgetreten, versuch es später noch einmal.");
         }
       }
     }

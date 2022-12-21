@@ -1,51 +1,49 @@
 import 'dart:io';
-
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Interfaces/ApiInterfaces.dart';
-import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'package:de/Widgets/buttons/loading_button_widget.dart';
+import 'package:xitem/api/AuthenticationApi.dart';
+import 'package:xitem/controllers/StateController.dart';
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/controllers/UserController.dart';
+import 'package:xitem/interfaces/ApiInterfaces.dart';
+import 'package:xitem/utils/ApiResponseMapper.dart';
+import 'package:xitem/utils/AvatarImageProvider.dart';
+import 'package:xitem/widgets/dialogs/StandardDialog.dart';
+import 'package:xitem/widgets/buttons/LoadingButton.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage();
+  const EditProfilePage(this._userController, this._authenticationApi, {super.key});
+
+  final UserController _userController;
+  final AuthenticationApi _authenticationApi;
 
   @override
-  State<StatefulWidget> createState() {
-    return _EditProfilePageState();
-  }
+  State<StatefulWidget> createState() => _EditProfilePageState();
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
-
   final _name = TextEditingController();
 
   final _birthdayText = TextEditingController();
-  final birthdayFormat = new DateFormat.yMMMMd('de_DE');
-  DateTime _birthday;
+  final birthdayFormat = DateFormat.yMMMMd('de_DE');
+  DateTime? _birthday;
 
   final _oldPassword = TextEditingController();
   final _newPassword = TextEditingController();
   final _repeatPassword = TextEditingController();
 
-  File _newAvatarImage;
-  File _pickedImage;
-  final ImagePicker picker = new ImagePicker();
+  final ImagePicker picker = ImagePicker();
+  final ImageCropper cropper = ImageCropper();
 
   @override
   void initState() {
-    if (UserController.user.name != null) {
-      _name.text = UserController.user.name;
-    }
+    _name.text = widget._userController.getAuthenticatedUser().name;
+    _birthday = widget._userController.getAuthenticatedUser().birthday;
 
-    if (UserController.user.birthday != null) {
-      _birthdayText.text = birthdayFormat.format(UserController.user.birthday);
-      _birthday = UserController.user.birthday;
+    if(_birthday != null) {
+      _birthdayText.text = birthdayFormat.format(_birthday!);
     }
 
     super.initState();
@@ -58,7 +56,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+    const TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
 
     final nameField = TextField(
       obscureText: false,
@@ -67,9 +65,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Name",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -86,9 +84,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
             hintText: "Geburtstag",
-            hintStyle: TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: Colors.grey),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
             suffixIcon: Icon(
               Icons.calendar_today,
@@ -108,9 +106,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Altes Passwort",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -121,9 +119,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Neues Passwort",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -134,9 +132,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Neues Passwort wiederholen",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -147,7 +145,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           leading: BackButton(
             color: ThemeController.activeTheme().iconColor,
             onPressed: () {
-              Navigator.pop(context);
+              StateController.navigatorKey.currentState?.pop();
             },
           ),
           title: Text(
@@ -160,94 +158,106 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         backgroundColor: ThemeController.activeTheme().backgroundColor,
         body: Center(
-            child: Container(
-          child: ListView(
-            children: <Widget>[
-              Padding(
-                padding: EdgeInsets.fromLTRB(30, 40, 30, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Center(
-                      child: GestureDetector(
-                        onTap: _changeProfilePicture,
-                        child: CircleAvatar(
-                          backgroundImage: (_newAvatarImage == null) ? FileImage(UserController.user.avatar) : FileImage(_newAvatarImage),
-                          radius: 60,
-                          child: Icon(Icons.add_a_photo, size: 50, color: ThemeController.activeTheme().iconColor),
+            child: ListView(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(30, 40, 30, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Center(
+                        child: GestureDetector(
+                          onTap: _changeProfilePicture,
+                          child: CircleAvatar(
+                            backgroundImage: AvatarImageProvider.get(widget._userController.getAuthenticatedUser().avatar),
+                            radius: 60,
+                            child: Icon(Icons.add_a_photo, size: 50, color: ThemeController.activeTheme().iconColor),
+                          ),
                         ),
                       ),
-                    ),
-                    Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
-                    Text(
-                      "Account Daten ändern",
-                      style: TextStyle(
-                        color: ThemeController.activeTheme().headlineColor,
-                        letterSpacing: 2,
-                        fontSize: 16,
+                      Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
+                      Text(
+                        "Account Daten ändern",
+                        style: TextStyle(
+                          color: ThemeController.activeTheme().headlineColor,
+                          letterSpacing: 2,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    nameField,
-                    SizedBox(height: 20),
-                    Row(
-                      children: <Widget>[
-                        Expanded(flex: 9, child: birthdayField),
-                        Expanded(
-                          flex: 1,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.delete,
-                              color: Colors.red,
+                      const SizedBox(height: 10),
+                      nameField,
+                      const SizedBox(height: 20),
+                      Row(
+                        children: <Widget>[
+                          Expanded(flex: 9, child: birthdayField),
+                          Expanded(
+                            flex: 1,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              iconSize: 30,
+                              onPressed: () {
+                                _birthday = null;
+                                _birthdayText.clear();
+                              },
                             ),
-                            iconSize: 30,
-                            onPressed: () {
-                              _birthday = null;
-                              _birthdayText.clear();
-                            },
-                          ),
-                        )
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    saveProfileButton,
-                    Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
-                    Text(
-                      "Passwort ändern",
-                      style: TextStyle(
-                        color: ThemeController.activeTheme().headlineColor,
-                        letterSpacing: 2,
-                        fontSize: 16,
+                          )
+                        ],
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    oldPasswordField,
-                    SizedBox(height: 20),
-                    newPasswordField,
-                    SizedBox(height: 20),
-                    repeatPasswordField,
-                    SizedBox(height: 20),
-                    changePasswordButton,
-                    SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 20),
+                      saveProfileButton,
+                      Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
+                      Text(
+                        "Passwort ändern",
+                        style: TextStyle(
+                          color: ThemeController.activeTheme().headlineColor,
+                          letterSpacing: 2,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      oldPasswordField,
+                      const SizedBox(height: 20),
+                      newPasswordField,
+                      const SizedBox(height: 20),
+                      repeatPasswordField,
+                      const SizedBox(height: 20),
+                      changePasswordButton,
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        )));
+              ],
+            )));
   }
 
   Future<bool> _saveProfile() async {
     FocusScope.of(context).unfocus();
 
-    return await UserController.changeUserInformation(_name.text, _birthday).then((registerSuccess) async {
-      if (registerSuccess) {
-        await DialogPopup.asyncOkDialog("Änderungen gespeichert", "Die Änderungen wurden erfolgreich an Xitem übermittlet");
-        return true;
-      } else {
-        await DialogPopup.asyncOkDialog("Änderungen konnten nicht gespeichert werden!", Api.errorMessage);
+    return await widget._userController.changeUserInformation(_name.text, _birthday).then((changeUser) async {
+      if (changeUser != ResponseCode.success) {
+        String errorMessage;
+
+        switch(changeUser) {
+          case ResponseCode.shortName:
+            errorMessage = "Der Name muss mindestens 3 Zeichen lang sein.";
+            break;
+          case ResponseCode.invalidDate:
+            errorMessage = "Der angegebene Geburtstag ist nicht gültig.";
+            break;
+          default:
+            errorMessage = "Die Änderungen konnten nicht gespeichert werden, versuch es später erneut.";
+            break;
+        }
+
+        await StandardDialog.okDialog("Änderungen konnten nicht gespeichert werden!", errorMessage);
         return false;
       }
+
+      await StandardDialog.okDialog("Änderungen gespeichert", "Die Änderungen wurden erfolgreich an Xitem übermittlet");
+      return true;
     });
   }
 
@@ -256,53 +266,76 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (_oldPassword.text == "" || _newPassword.text == "" || _repeatPassword.text == "") return false;
 
-    return await Api.changePassword(ChangePasswordRequest(_oldPassword.text, _newPassword.text, _repeatPassword.text)).then((success) async {
-      if (success) {
-        await DialogPopup.asyncOkDialog("Passwort geändert", "Die Änderungen wurden erfolgreich an Xitem übermittelt. Bitte melde dich erneut an.");
-        UserController.logout();
-        return true;
-      } else {
-        await DialogPopup.asyncOkDialog("Passwort konnten nicht gespeichert werden!", Api.errorMessage);
+    return await widget._authenticationApi.changePassword(ChangePasswordRequest(_oldPassword.text, _newPassword.text, _repeatPassword.text)).then((changePassword) async {
+      if (changePassword != ResponseCode.success) {
+        String errorMessage;
+
+        switch(changePassword) {
+          case ResponseCode.missingArgument:
+            errorMessage = "Bitte füllen Sie alle Pflichtfelder aus.";
+            break;
+          case ResponseCode.shortPassword:
+            errorMessage = "Dein Passwort muss mindestens 8 Zeichen lang sein.";
+            break;
+          case ResponseCode.repeatNotMatch:
+            errorMessage = "Die Passwörter stimmen nicht überein.";
+            break;
+          case ResponseCode.wrongPassword:
+            errorMessage = "Passwort falsch.";
+            break;
+          default:
+            errorMessage = "Das Passwort konnte nicht geändert werden, versuch es später erneut.";
+        }
+
+        await StandardDialog.okDialog("Passwort konnten nicht gespeichert werden!", errorMessage);
         return false;
       }
+
+      await StandardDialog.okDialog("Passwort geändert", "Die Änderungen wurden erfolgreich an Xitem übermittelt. Bitte melde dich erneut an.");
+      StateController.safeLogout();
+      return true;
     });
   }
 
   void _changeProfilePicture() async {
-    bool imagePicked = await _pickImage();
-    if (imagePicked) {
-      bool imageCopped = await _cropImage();
-
-      if (!imageCopped) {
-        setState(() {
-          DialogPopup.asyncOkDialog("Profilbild konnte nicht geändert werden!", "Es ist ein Fehler während der Bildauswahl aufgetreten, bitte versuch es erneut.");
-          _newAvatarImage = null;
-        });
-      } else {
-        DialogPopup.asyncLoadingDialog(_keyLoader, "Speichere Profilbild...");
-
-        if (_newAvatarImage != null) {
-          bool success = await UserController.changeAvatar(_newAvatarImage).catchError((e) {
-            Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-            return false;
-          });
-
-          await Future.delayed(const Duration(seconds: 1));
-          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-
-          if (!success)
-            DialogPopup.asyncOkDialog("Profilbild konnte nicht geändert werden!", Api.errorMessage);
-          else {
-            setState(() {});
-            DialogPopup.asyncOkDialog("Profilbild gespeichert", "Dein Profilbild wurde erfolgreich an Xitem übermittelt.");
-          }
-        }
-      }
+    File? pickedImage = await _pickImage();
+    if(pickedImage == null) {
+      return;
     }
+
+    pickedImage = await _cropImage(pickedImage);
+    if(pickedImage == null) {
+      StandardDialog.okDialog("Profilbild konnte nicht geändert werden!", "Es ist ein Fehler während der Bildauswahl aufgetreten, bitte versuch es erneut.");
+      return;
+    }
+
+    StandardDialog.loadingDialog("Speichere Profilbild...");
+
+    ResponseCode changeAvatar = await widget._userController.changeAvatar(pickedImage);
+
+    StateController.navigatorKey.currentState?.pop();
+
+    if (changeAvatar != ResponseCode.success) {
+      String errorMessage;
+
+      switch(changeAvatar) {
+        case ResponseCode.payloadTooLarge:
+          errorMessage = "Das angegebene Profilbild ist zu groß!";
+          break;
+        default:
+          errorMessage = "Es ist ein Fehler während der Übertragung aufgetreten, bitte versuch es später erneut.";
+      }
+
+      StandardDialog.okDialog("Profilbild konnte nicht geändert werden!", errorMessage);
+      return;
+    }
+
+    setState(() {});
+    StandardDialog.okDialog("Profilbild gespeichert", "Dein Profilbild wurde erfolgreich an Xitem übermittelt.");
   }
 
-  Future<Null> _selectDate(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
         context: context,
         errorFormatText: "Ungültiges Format",
         helpText: "Geburtstag auswählen",
@@ -311,7 +344,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         initialDate: DateTime.now(),
         firstDate: DateTime(1901, 1),
         lastDate: DateTime.now(),
-        locale: Locale('de', 'DE'));
+        locale: const Locale('de', 'DE')
+    );
+
     if (picked != null && picked != _birthday) {
       _birthday = picked;
       setState(() {
@@ -320,37 +355,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<bool> _pickImage() async {
-    _pickedImage = null;
-    final pickedImage = await picker.getImage(source: ImageSource.gallery);
+  Future<File?> _pickImage() async {
+    final XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedImage != null) {
-      _pickedImage = File(pickedImage.path);
-      return true;
+    if (pickedImage == null) {
+      return null;
     }
 
-    return false;
+    return File(pickedImage.path);
   }
 
-  Future<bool> _cropImage() async {
-    final File croppedFile = await ImageCropper.cropImage(
-      sourcePath: _pickedImage.path,
+  Future<File?> _cropImage(File imageToCrop) async {
+    final CroppedFile? croppedFile = await cropper.cropImage(
+      sourcePath: imageToCrop.path,
       aspectRatioPresets: [
         CropAspectRatioPreset.square,
       ],
-      androidUiSettings:
-      AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
-      iosUiSettings: IOSUiSettings(
-        title: 'Profilbild anpassen',
-      ),
+      uiSettings: [
+        AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
+        IOSUiSettings(title: 'Profilbild anpassen',),
+      ],
       compressFormat: ImageCompressFormat.png,
     );
 
-    if (croppedFile != null) {
-      _newAvatarImage = croppedFile;
-      return true;
+    if(croppedFile == null) {
+      return null;
     }
 
-    return false;
+    return File(croppedFile.path);
   }
 }

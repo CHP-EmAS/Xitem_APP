@@ -1,198 +1,124 @@
 import 'dart:io';
 
-import 'package:de/controllers/ApiController.dart';
-import 'package:de/controllers/HolidayListController.dart';
-import 'package:de/interfaces/ApiInterfaces.dart';
-import 'package:de/models/Calendar.dart';
-import 'package:de/models/User.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:xitem/api/UserApi.dart';
+import 'package:xitem/interfaces/ApiInterfaces.dart';
+import 'package:xitem/models/User.dart';
+import 'package:xitem/utils/ApiResponseMapper.dart';
 
 class UserController {
-  static AppUser user;
+  UserController(this._api);
 
-  static PublicUser unknownUser = new PublicUser("0", "Unbekannt", null, "Unbekannt", null);
+  final UserApi _api;
 
-  static Map<String, Calendar> calendarList = new Map<String, Calendar>();
-  static Map<String, PublicUser> publicUserList = new Map<String, PublicUser>();
+  bool _isInitialized = false;
 
-  static Future<bool> trySecureLogin() async {
-    final String userID = await Api.secureLogin();
-    if (userID == null) return false;
+  late AuthenticatedUser _authenticatedUser;
+  final Map<String, User> _userList = <String, User>{};
 
-    AppUser loadedUser = await Api.loadAppUserInformation(userID);
-    if (loadedUser == null) return false;
-
-    UserController.user = loadedUser;
-    return true;
-  }
-
-  static Future<bool> login(String email, String password) async {
-    final String userID = await Api.login(UserLoginRequest(email, password));
-    if (userID == null) return false;
-
-    AppUser loadedUser = await Api.loadAppUserInformation(userID);
-    if (loadedUser == null) return false;
-
-    UserController.user = loadedUser;
-    return true;
-  }
-
-  static void logout() async {
-    await Api.logout();
-
-    user = null;
-    calendarList.clear();
-    publicUserList.clear();
-  }
-
-  static Future<bool> changeUserInformation(String name, DateTime birthday) async {
-    if (UserController.user == null) return false;
-
-    if (await Api.patchUser(user.userID, PatchUserRequest(name, birthday))) {
-      user.name = name;
-      user.birthday = birthday;
-
-      return true;
+  Future<ResponseCode> initialize(String loggedInUserID) async {
+    if(_isInitialized) {
+      return ResponseCode.invalidAction;
     }
 
-    return false;
-  }
+    ApiResponse<AuthenticatedUser> loadUser = await _api.loadAppUserInformation(loggedInUserID);
 
-  static Future<bool> changeAvatar(File avatarImage) async {
-    if (UserController.user == null) return false;
-
-    if (await Api.pushAvatarToServer(avatarImage, user.userID)) {
-      user.avatar = avatarImage;
-      return true;
+    if(loadUser.code != ResponseCode.success) {
+      return loadUser.code;
     }
 
-    return false;
+    _authenticatedUser = loadUser.value as AuthenticatedUser;
+    _isInitialized = true;
+    return ResponseCode.success;
   }
 
-  static Future<bool> loadAllCalendars() async {
-    print("Loading Calendarlist...");
+  AuthenticatedUser getAuthenticatedUser() {
+    if(!_isInitialized) {
+      throw AssertionError("UserController must be initialized before it can be accessed!");
+    }
 
-    if (UserController.user != null) {
-      await HolidayController.loadPublicHolidays();
+    return _authenticatedUser;
+  }
 
-      List<Calendar> loadedCalendarList = await Api.loadAssociatedCalendars(user.userID);
-      if (loadedCalendarList != null) {
-        UserController.calendarList.clear();
+  List<User> getUserList() {
+    if(!_isInitialized) {
+      throw AssertionError("UserController must be initialized before it can be accessed!");
+    }
 
-        for (final calendar in loadedCalendarList) {
-          UserController.calendarList[calendar.id] = calendar;
-          await calendar.loadAssociatedUsers();
-          await calendar.loadCurrentEvents();
-          await calendar.loadAllVotings();
-          await calendar.loadAllNotes();
-        }
+    return _userList.values.toList();
+  }
 
-        return true;
+  Future<ResponseCode> changeUserInformation(String name, DateTime? birthday) async {
+    if(!_isInitialized) {
+      throw AssertionError("UserController must be initialized before it can be accessed!");
+    }
+
+    ResponseCode patchUser = await _api.patchUser(_authenticatedUser.id, PatchUserRequest(name, birthday));
+
+    if(patchUser == ResponseCode.success) {
+      _authenticatedUser.name = name;
+      _authenticatedUser.birthday = birthday;
+    }
+
+    return patchUser;
+  }
+
+  Future<ResponseCode> changeAvatar(File avatarImage) async {
+    if(!_isInitialized) {
+      throw AssertionError("UserController must be initialized before it can be accessed!");
+    }
+
+    ResponseCode pushAvatar = await _api.pushAvatarToServer(avatarImage, _authenticatedUser.id);
+
+    if(pushAvatar == ResponseCode.success) {
+      _authenticatedUser.avatar = avatarImage;
+    }
+
+    return pushAvatar;
+  }
+
+  Future<ApiResponse<User>> getUser(String userID) async {
+    if(!_isInitialized) {
+      throw AssertionError("UserController must be initialized before it can be accessed!");
+    }
+
+    if (userID == _authenticatedUser.id) {
+      return ApiResponse(ResponseCode.success, _authenticatedUser);
+    }
+
+    if (!_userList.containsKey(userID)) {
+      ResponseCode loadUser = await _loadUser(userID);
+
+      if(loadUser != ResponseCode.success) {
+        return ApiResponse(loadUser, null);
       }
     }
 
-    return false;
+    return ApiResponse(ResponseCode.success, _userList[userID]);
   }
 
-  static Future<String> createCalendar(String name, String password, bool canJoin, Color color, IconData icon) async {
-    if (UserController.user != null) {
-      String calendarID = await Api.createCalendar(CreateCalendarRequest(name, password, canJoin, color, icon));
-      if (calendarID == null) return null;
-
-      Calendar newCalendar = await Api.loadSingleCalendar(calendarID);
-      if (newCalendar == null) return null;
-
-      UserController.calendarList[newCalendar.id] = newCalendar;
-      await newCalendar.loadAssociatedUsers();
-
-      return newCalendar.name + "#" + newCalendar.hash;
+  User? getLoadedUser(String userID) {
+    if (userID == _authenticatedUser.id) {
+      return _authenticatedUser;
     }
 
-    return null;
+    return _userList[userID];
   }
 
-  static Future<bool> joinCalendar(String hashName, String password, Color color, IconData icon) async {
-    if (UserController.user != null) {
-      String calendarID = await Api.joinCalendar(hashName, JoinCalendarRequest(password, color, icon));
-      if (calendarID == null) return false;
-
-      Calendar newCalendar = await Api.loadSingleCalendar(calendarID);
-      if (newCalendar == null) return false;
-
-      UserController.calendarList[newCalendar.id] = newCalendar;
-      await newCalendar.loadAssociatedUsers();
-
-      return true;
+  Future<ResponseCode> _loadUser(String userID) async {
+    if(!_isInitialized) {
+      throw AssertionError("UserController must be initialized before it can be accessed!");
     }
 
-    return false;
-  }
+    if (!_userList.containsKey(userID)) {
+      ApiResponse<User> loadPublicUser = await _api.loadPublicUserInformation(userID);
 
-  static Future<bool> acceptCalendarInvitation(String invToken, Color color, IconData icon) async {
-    if (UserController.user != null) {
-      String calendarID = await Api.acceptCalendarInvitationToken(AcceptCalendarInvitationRequest(invToken, color, icon));
-      if (calendarID == null) return false;
+      if(loadPublicUser.code == ResponseCode.success) {
+        _userList[userID] = loadPublicUser.value!;
+      }
 
-      Calendar newCalendar = await Api.loadSingleCalendar(calendarID);
-      if (newCalendar == null) return false;
-
-      UserController.calendarList[newCalendar.id] = newCalendar;
-      await newCalendar.loadAssociatedUsers();
-
-      return true;
+      return loadPublicUser.code;
     }
 
-    return false;
-  }
-
-  static Future<bool> deleteCalendar(String calendarID, String userPassword) async {
-    if (UserController.user != null) {
-      if (!await Api.checkHashPassword(userPassword)) return false;
-
-      if (!await Api.deleteCalendar(calendarID)) return false;
-
-      calendarList.remove(calendarID);
-      return true;
-    }
-
-    return false;
-  }
-
-  static Future<bool> leaveCalendar(String calendarID, String userPassword) async {
-    if (UserController.user != null) {
-      if (!await Api.checkHashPassword(userPassword)) return false;
-
-      if (!await Api.leaveCalendar(calendarID)) return false;
-
-      calendarList.remove(calendarID);
-      return true;
-    }
-
-    return false;
-  }
-
-  static void loadPublicUser(String userID) async {
-    if (userID == UserController.user.userID) return;
-
-    if (!publicUserList.containsKey(userID)) {
-      PublicUser loadedPublicUser = await Api.loadPublicUserInformation(userID);
-
-      if (loadedPublicUser == null) return null;
-
-      publicUserList[userID] = loadedPublicUser;
-    }
-  }
-
-  static PublicUser getPublicUserInformation(String userID) {
-    if (userID == UserController.user.userID) {
-      return new PublicUser(userID, UserController.user.name, UserController.user.birthday, UserController.user.role, UserController.user.avatar);
-    }
-
-    if (!publicUserList.containsKey(userID)) {
-      loadPublicUser(userID);
-      return null;
-    }
-
-    return publicUserList[userID];
+    return ResponseCode.success;
   }
 }

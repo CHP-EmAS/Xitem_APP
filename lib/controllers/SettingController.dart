@@ -1,120 +1,82 @@
-import 'package:de/controllers/HolidayListController.dart';
-import 'package:de/controllers/ThemeController.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/utils/StateCodeConverter.dart';
 
 class SettingController {
-  static SharedPreferences _prefs;
+  late final SharedPreferences _prefs;
 
-  static final String _appThemeKey = "appThemeKey";
-  static final String _timezoneKey = "timezoneKey";
-  static final String _holidayStateCodeKey = "holidayStateCodeKey";
-  static final String _eventStandardColorKey = "eventStandardColorKey";
-  static final String _showNewVotingOnEventScreenKey = "showNewVotingOnEventScreenKey";
-  static final String _showBirthdaysOnHolidayScreenKey = "showBirthdaysOnHolidayScreenKey";
+  static const String _appThemeKey = "appThemeKey";
+  static const String _timezoneKey = "timezoneKey";
+  static const String _holidayStateCodeKey = "holidayStateCodeKey";
+  static const String _eventStandardColorKey = "eventStandardColorKey";
+  static const String _showNewVotingOnEventScreenKey = "showNewVotingOnEventScreenKey";
+  static const String _showBirthdaysOnHolidayScreenKey = "showBirthdaysOnHolidayScreenKey";
 
-  static Future<void> init() async {
+  Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  static XitemTheme getTheme() {
+  XitemTheme getTheme() {
     String storedTheme = _prefs.getString(_appThemeKey) ?? "dark";
 
-    return storedTheme == "light" ? XitemTheme.Light : XitemTheme.Dark;
+    return storedTheme == "light" ? XitemTheme.light : XitemTheme.dark;
   }
 
-  static Future<bool> setTheme(XitemTheme theme) async {
+  Future<bool> setTheme(XitemTheme theme) async {
     String storedTheme = "dark";
-    if (theme == XitemTheme.Light) storedTheme = "light";
+    if (theme == XitemTheme.light) storedTheme = "light";
 
     return await _prefs.setString(_appThemeKey, storedTheme);
   }
 
-  static tz.Location getTimeZone() {
-    String storedTimeZone = _prefs.get(_timezoneKey) ?? "Europe/Berlin";
+  tz.Location getTimeZone() {
+    String storedTimeZone = _prefs.getString(_timezoneKey) ?? "Europe/Berlin";
 
     if (tz.timeZoneDatabase.locations.containsKey(storedTimeZone)) return tz.getLocation(storedTimeZone);
 
     return tz.getLocation("Europe/Berlin");
   }
 
-  static Future<bool> setTimeZone(tz.Location timeZone) async {
+  Future<bool> setTimeZone(tz.Location timeZone) async {
     return await _prefs.setString(_timezoneKey, timeZone.name);
   }
 
-  static StateCode getHolidayStateCode() {
-    String storedHolidayStateCode = _prefs.get(_holidayStateCodeKey) ?? "BW";
-
-    switch (storedHolidayStateCode) {
-      case "BW":
-        return StateCode.BW;
-      case "BY":
-        return StateCode.BY;
-      case "BE":
-        return StateCode.BE;
-      case "BB":
-        return StateCode.BB;
-      case "HB":
-        return StateCode.HB;
-      case "HH":
-        return StateCode.HH;
-      case "HE":
-        return StateCode.HE;
-      case "MV":
-        return StateCode.MV;
-      case "NI":
-        return StateCode.NI;
-      case "NW":
-        return StateCode.NW;
-      case "RP":
-        return StateCode.RP;
-      case "SL":
-        return StateCode.SL;
-      case "SN":
-        return StateCode.SN;
-      case "ST":
-        return StateCode.ST;
-      case "SH":
-        return StateCode.SH;
-      case "TH":
-        return StateCode.TH;
-      default:
-        return StateCode.BW;
-    }
+  StateCode getHolidayStateCode() {
+    String storedHolidayStateCode = _prefs.getString(_holidayStateCodeKey) ?? "hh";
+    return StateCodeConverter.getStateCode(storedHolidayStateCode);
   }
 
-  static Future<bool> setHolidayStateCode(StateCode stateCode) async {
-    return await _prefs.setString(_holidayStateCodeKey, HolidayController.getStateCode(stateCode));
+  Future<bool> setHolidayStateCode(StateCode stateCode) async {
+    return await _prefs.setString(_holidayStateCodeKey, StateCodeConverter.getStateCodeString(stateCode));
   }
 
-  static Color getEventStandardColor()  {
-    int storedEventStandardColor = _prefs.getInt(_eventStandardColorKey) ?? Colors.amber.value;
-
-    return Color(storedEventStandardColor);
+  int getEventStandardColor() {
+    return _prefs.getInt(_eventStandardColorKey) ?? ThemeController.defaultEventColorIndex;
   }
 
-  static Future<bool> setEventStandardColor(Color color) async {
-    return await _prefs.setInt(_eventStandardColorKey, color.value);
+  Future<bool> setEventStandardColor(int color) async {
+    return await _prefs.setInt(_eventStandardColorKey, color);
   }
 
-  static bool getShowNewVotingOnEventScreen() {
+  bool getShowNewVotingOnEventScreen() {
     bool showNewVotingOnEventScreen = _prefs.getBool(_showNewVotingOnEventScreenKey) ?? true;
 
     return showNewVotingOnEventScreen;
   }
 
-  static Future<bool> setShowNewVotingOnEventScreen(bool show) async {
+  Future<bool> setShowNewVotingOnEventScreen(bool show) async {
     return await _prefs.setBool(_showNewVotingOnEventScreenKey, show);
   }
 
-  static bool getShowBirthdaysOnHolidayScreen()  {
+  bool getShowBirthdaysOnHolidayScreen() {
     bool showNewVotingOnEventScreen = _prefs.getBool(_showBirthdaysOnHolidayScreenKey) ?? true;
 
     return showNewVotingOnEventScreen;
   }
 
-  static Future<bool> setShowBirthdaysOnHolidayScreen(bool show) async {
+  Future<bool> setShowBirthdaysOnHolidayScreen(bool show) async {
     return await _prefs.setBool(_showBirthdaysOnHolidayScreenKey, show);
   }
 }

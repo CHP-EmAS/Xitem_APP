@@ -1,25 +1,28 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Interfaces/ApiInterfaces.dart';
-import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'package:de/Widgets/buttons/loading_button_widget.dart';
+import 'package:xitem/api/AuthenticationApi.dart';
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/interfaces/ApiInterfaces.dart';
+import 'package:xitem/utils/ApiResponseMapper.dart';
+import 'package:xitem/widgets/buttons/LoadingButton.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterPage extends StatefulWidget {
+  const RegisterPage(this._authenticationApi, {super.key});
+
+  final AuthenticationApi _authenticationApi;
+
   @override
-  State<StatefulWidget> createState() {
-    return _RegisterScreenState();
-  }
+  State<StatefulWidget> createState() => _RegisterPageState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterPageState extends State<RegisterPage> {
   final _email = TextEditingController();
   final _name = TextEditingController();
 
+  static final _birthdayFormat = DateFormat.yMMMMd('de_DE');
   final _birthdayText = TextEditingController();
-  final birthdayFormat = new DateFormat.yMMMMd('de_DE');
-  DateTime _birthday;
+  DateTime? _birthday;
 
   String _errorMessage = "";
 
@@ -34,7 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+    TextStyle style = const TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
 
     final emailField = TextField(
       obscureText: false,
@@ -43,10 +46,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "E-Mail*",
-          hintStyle: TextStyle(color: Colors.grey),
-          //errorText: _validEmail ? null : "Email adress is invalid!",
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -57,9 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Name*",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -73,9 +75,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
             hintText: "Geburtstag",
-            hintStyle: TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: Colors.grey),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
             suffixIcon: Icon(
               Icons.calendar_today,
@@ -103,41 +105,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       backgroundColor: ThemeController.activeTheme().backgroundColor,
       body: Center(
-        child: Container(
-          child: ListView(
-            padding: const EdgeInsets.all(36),
-            children: <Widget>[
-              SizedBox(
-                height: 160.0,
-                child: Image.asset(
-                  "images/logo_hell.png",
-                  fit: BoxFit.contain,
-                ),
+        child: ListView(
+          padding: const EdgeInsets.all(36),
+          children: <Widget>[
+            SizedBox(
+              height: 160.0,
+              child: Image.asset(
+                "images/logo_hell.png",
+                fit: BoxFit.contain,
               ),
-              SizedBox(height: 30.0),
-              emailField,
-              SizedBox(height: 20.0),
-              nameField,
-              SizedBox(height: 20.0),
-              birthdayField,
-              SizedBox(height: 5.0),
-              Text(
-                '* Pflichtfelder',
-                style: TextStyle(color: Colors.red, fontSize: 16),
+            ),
+            const SizedBox(height: 30.0),
+            emailField,
+            const SizedBox(height: 20.0),
+            nameField,
+            const SizedBox(height: 20.0),
+            birthdayField,
+            const SizedBox(height: 5.0),
+            const Text(
+              '* Pflichtfelder',
+              style: TextStyle(color: Colors.red, fontSize: 16),
+            ),
+            const SizedBox(height: 20.0),
+            registerButton,
+            const SizedBox(
+              height: 5,
+            ),
+            Center(
+              child: Text(
+                _errorMessage,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
               ),
-              SizedBox(height: 20.0),
-              registerButton,
-              SizedBox(
-                height: 5,
-              ),
-              Center(
-                child: Text(
-                  _errorMessage,
-                  style: TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              )
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );
@@ -146,24 +146,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<bool> _registerClick() async {
     if (_email.text == "" || _name.text == "") return false;
 
-    return await Api.register(UserRegistrationRequest(_email.text, _name.text, _birthday)).then((registerSuccess) async {
-      if (registerSuccess) {
-        await DialogPopup.asyncOkDialog("Bestätigungs E-Mail gesendet", "Bitte bestätigen sie ihre E-Mail Adresse, danach können sie sich anmelden.");
+    return await widget._authenticationApi.register(UserRegistrationRequest(_email.text, _name.text, _birthday)).then((registerEmail) async {
+      if (registerEmail != ResponseCode.success) {
+        switch(registerEmail) {
+          case ResponseCode.emailExistsError:
+            _errorMessage = "Ein Account mit dieser E-Mail existiert bereits";
+            break;
+          case ResponseCode.shortName:
+            _errorMessage = "Der Name muss mindestens 3 Zeichen lang sein.";
+            break;
+          case ResponseCode.invalidEmail:
+            _errorMessage = "Die angegebene E-Mail ist nicht gültig.";
+            break;
+          case ResponseCode.invalidDate:
+            _errorMessage = "Der angegebene Geburtstag ist nicht gültig.";
+            break;
+          default:
+            _errorMessage = "Bei der Registrierung ist ein Fehler aufgetreten. Versuche es später noch einmal.";
+            break;
+        }
 
-        Navigator.pop(context);
+        setState(() {});
 
-        return true;
-      } else {
-        setState(() {
-          _errorMessage = Api.errorMessage;
-        });
         return false;
       }
+
+      await StandardDialog.okDialog("Bestätigungs E-Mail gesendet", "Bitte bestätige deine E-Mail-Adresse, danach kannst du dich anmelden.");
+
+      return true;
     });
   }
 
   void _selectDate(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
         context: context,
         errorFormatText: "Ungültiges Format",
         helpText: "Geburtstag auswählen",
@@ -172,11 +187,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         initialDate: DateTime.now(),
         firstDate: DateTime(1901, 1),
         lastDate: DateTime.now(),
-        locale: Locale('de', 'DE'));
+        locale: const Locale('de', 'DE')
+    );
+
     if (picked != null && picked != _birthday) {
       _birthday = picked;
       setState(() {
-        _birthdayText.text = birthdayFormat.format(picked);
+        _birthdayText.text = _birthdayFormat.format(picked);
       });
     }
   }

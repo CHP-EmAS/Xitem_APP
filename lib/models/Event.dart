@@ -1,6 +1,7 @@
-import 'package:de/controllers/ApiController.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:xitem/models/Calendar.dart';
+import 'package:xitem/models/User.dart';
 
 class Event {
   Event(this.eventID, this.start, this.end, this.title, this.description, this.color, this.calendarID, this.userID, this.dayLong, this.creationDate);
@@ -13,48 +14,36 @@ class Event {
   DateTime creationDate;
 
   String title;
-  String description;
+  String? description;
 
-  Color color;
+  int color;
 
   final String calendarID;
   final String userID;
 
   bool dayLong;
-
-  Future<void> reload() async {
-    Event reloadedEvent = await Api.loadSingleEvent(calendarID, eventID);
-
-    if (reloadedEvent == null) return;
-
-    if (this.eventID != reloadedEvent.eventID) {
-      print("Unexpected Error when reloading Event, IDs not equal!");
-      return;
-    }
-
-    this.start = reloadedEvent.start;
-    this.end = reloadedEvent.end;
-
-    this.creationDate = reloadedEvent.creationDate;
-    this.color = reloadedEvent.color;
-
-    this.title = reloadedEvent.title;
-    this.description = reloadedEvent.description;
-
-    this.dayLong = reloadedEvent.dayLong;
-  }
 }
 
-class CalendarEvent {
-  CalendarEvent(this.eventID, this.startTime, this.endTime, this.title, this.color, this.calendarID);
+class UiEvent {
+  const UiEvent(this.event, this.calendar, this.headline, this.firstLine, this.secondLine);
 
-  final BigInt eventID;
+  final Event event;
+  final Calendar calendar;
 
-  String startTime;
-  String endTime;
+  final String firstLine;
+  final String secondLine;
+  final String headline;
+}
 
-  String title;
-  Color color;
+class EventData {
+  EventData(this.selectedCalendar, this.title, this.startDate, this.endDate, this.daylong, this.color, this.description);
 
-  String calendarID;
+  final String selectedCalendar;
+
+  final String title;
+  final DateTime startDate;
+  final DateTime endDate;
+  final bool daylong;
+  final int color;
+  final String description;
 }

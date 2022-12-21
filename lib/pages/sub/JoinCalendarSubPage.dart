@@ -1,19 +1,21 @@
-import 'package:de/Controllers/ApiController.dart';
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Widgets/Dialogs/dialog_popups.dart';
-import 'package:de/Widgets/Dialogs/picker_popups.dart';
-import 'package:de/Widgets/buttons/loading_button_widget.dart';
-import 'package:de/Widgets/icon_picker_widget.dart';
+import 'package:xitem/controllers/CalendarController.dart';
+import 'package:xitem/controllers/StateController.dart';
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/controllers/UserController.dart';
+import 'package:xitem/utils/ApiResponseMapper.dart';
+import 'package:xitem/widgets/buttons/LoadingButton.dart';
+import 'package:xitem/widgets/IconPicker.dart';
 import 'package:flutter/material.dart';
+import 'package:xitem/widgets/dialogs/PickerDialog.dart';
+import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 
 class JoinCalendarSubPage extends StatefulWidget {
-  const JoinCalendarSubPage();
+  const JoinCalendarSubPage(this._calendarController, {super.key});
+
+  final CalendarController _calendarController;
 
   @override
-  State<StatefulWidget> createState() {
-    return _JoinCalendarSubPageState();
-  }
+  State<StatefulWidget> createState() => _JoinCalendarSubPageState();
 }
 
 class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
@@ -21,8 +23,8 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
   final _password = TextEditingController();
 
   bool _alert = true;
-  Color _color = Colors.amber;
-  IconData _icon = default_icons[0];
+  int _color = ThemeController.defaultEventColorIndex;
+  IconData _icon = IconPicker.defaultIcons[0];
 
   @override
   void initState() {
@@ -36,7 +38,7 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
+    const TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black);
 
     final idField = TextField(
       obscureText: false,
@@ -45,16 +47,16 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
       decoration: InputDecoration(
           suffixIcon: GestureDetector(
             onTap: () {
-              DialogPopup.asyncOkDialog("Kalender ID",
+              StandardDialog.okDialog("Kalender ID",
                   "Die Kalender ID ist in den Einstellungen des jeweiligen Kalenders zu finden. Sie besteht aus dem Namen des Kalenders und einer Nummer welche durch einen # getrennt sind.");
             },
-            child: Icon(Icons.info_outline),
+            child: const Icon(Icons.info_outline),
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "ID (Name#1234)",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -65,9 +67,9 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
       decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          contentPadding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           hintText: "Passwort",
-          hintStyle: TextStyle(color: Colors.grey),
+          hintStyle: const TextStyle(color: Colors.grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
@@ -76,160 +78,184 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
 
       if (_id.text == "" || _password.text == "") return false;
 
-      return await UserController.joinCalendar(_id.text, _password.text, _color, _icon).then((success) async {
-        if (success) {
-          Navigator.pushNamedAndRemoveUntil(context, '/home/calendar', (route) => false);
-          return true;
-        } else {
-          DialogPopup.asyncOkDialog("Dem Kalender konnten nicht beigetreten werden!", Api.errorMessage);
-          return false;
+      ResponseCode joinCalendar = await widget._calendarController.joinCalendar(_id.text, _password.text, _color, _icon);
+
+      if(joinCalendar != ResponseCode.success) {
+        String errorMessage;
+
+        switch (joinCalendar) {
+          case ResponseCode.missingArgument:
+            errorMessage = "Bitte füllen Sie alle Pflichtfelder aus.";
+            break;
+          case ResponseCode.calendarNotFound:
+            errorMessage = "Der Kalender den du betreten möchtest existiert nicht mehr.";
+            break;
+          case ResponseCode.calendarNotJoinable:
+            errorMessage = "Diesem Kalender kann nicht beigetreten werden.";
+            break;
+          case ResponseCode.assocUserAlreadyExists:
+            errorMessage = "Du bist bereits Mitglied in diesem Kalender.";
+            break;
+          case ResponseCode.invalidColor:
+            errorMessage = "Unzulässige Farbe.";
+            break;
+          case ResponseCode.wrongPassword:
+            errorMessage = "Kalender-Name oder Passwort falsch.";
+            break;
+          default:
+            errorMessage = "Beim Beitreten des Kalenders ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
+            break;
         }
-      });
+
+        StandardDialog.okDialog("Dem Kalender konnten nicht beigetreten werden!", errorMessage);
+        return false;
+      }
+
+      StateController.navigatorKey.currentState?.pushNamedAndRemoveUntil('/home/calendar', (route) => false);
+      return true;
     });
 
-    return Container(
-      child: ListView(
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(30, 40, 30, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  "Kalender ID",
-                  style: TextStyle(
-                    color: ThemeController.activeTheme().headlineColor,
-                    letterSpacing: 2,
-                    fontSize: 16,
-                  ),
+    return ListView(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(30, 40, 30, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                "Kalender ID",
+                style: TextStyle(
+                  color: ThemeController.activeTheme().headlineColor,
+                  letterSpacing: 2,
+                  fontSize: 16,
                 ),
-                SizedBox(height: 10),
-                idField,
-                SizedBox(height: 20),
-                Text(
-                  "Passwort",
-                  style: TextStyle(
-                    color: ThemeController.activeTheme().headlineColor,
-                    letterSpacing: 2,
-                    fontSize: 16,
-                  ),
+              ),
+              const SizedBox(height: 10),
+              idField,
+              const SizedBox(height: 20),
+              Text(
+                "Passwort",
+                style: TextStyle(
+                  color: ThemeController.activeTheme().headlineColor,
+                  letterSpacing: 2,
+                  fontSize: 16,
                 ),
-                SizedBox(height: 10),
-                passwordField,
-                SizedBox(height: 10),
-                Divider(
-                  height: 20,
-                  color: ThemeController.activeTheme().dividerColor,
-                ),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      flex: 2,
-                      child: MaterialButton(
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
+              ),
+              const SizedBox(height: 10),
+              passwordField,
+              const SizedBox(height: 10),
+              Divider(
+                height: 20,
+                color: ThemeController.activeTheme().dividerColor,
+              ),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: 2,
+                    child: MaterialButton(
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
 
-                          PickerPopup.showColorPickerDialog(_color).then((selectedColor) {
-                            if (selectedColor != null) {
-                              setState(() {
-                                _color = selectedColor;
-                              });
-                            }
-                          });
-                        },
-                        color: _color,
-                        textColor: Colors.white,
-                        padding: EdgeInsets.all(16),
-                        shape: CircleBorder(),
+                        PickerDialog.eventColorPickerDialog(_color).then((selectedColor) {
+                          if (selectedColor != null) {
+                            setState(() {
+                              _color = selectedColor;
+                            });
+                          }
+                        });
+                      },
+                      color: ThemeController.getEventColor(_color),
+                      textColor: Colors.white,
+                      padding: const EdgeInsets.all(16),
+                      shape: const CircleBorder(),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 8,
+                    child: Text(
+                      "Kalender Farbe",
+                      style: TextStyle(
+                        color: ThemeController.activeTheme().headlineColor,
+                        letterSpacing: 2,
+                        fontSize: 16,
                       ),
                     ),
-                    Expanded(
-                      flex: 8,
-                      child: Text(
-                        "Kalender Farbe",
-                        style: TextStyle(
-                          color: ThemeController.activeTheme().headlineColor,
-                          letterSpacing: 2,
-                          fontSize: 16,
-                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: 2,
+                    child: IconButton(
+                      icon: Icon(_icon),
+                      color: Colors.white70,
+                      iconSize: 40,
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
+                        PickerDialog.iconPickerDialog(_icon).then((selectedIcon) {
+                          if (selectedIcon != null) {
+                            setState(() {
+                              _icon = selectedIcon;
+                            });
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    flex: 8,
+                    child: Text(
+                      "Kalender Icon",
+                      style: TextStyle(
+                        color: ThemeController.activeTheme().headlineColor,
+                        letterSpacing: 2,
+                        fontSize: 16,
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      flex: 2,
-                      child: IconButton(
-                        icon: Icon(_icon),
-                        color: Colors.white70,
-                        iconSize: 40,
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
-                          PickerPopup.showIconPickerDialog(_icon).then((selectedIcon) {
-                            if (selectedIcon != null) {
-                              setState(() {
-                                _icon = selectedIcon;
-                              });
-                            }
-                          });
-                        },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: 2,
+                    child: Switch(
+                      value: _alert,
+                      onChanged: (value) {
+                        setState(() {
+                          _alert = value;
+                        });
+                      },
+                      activeTrackColor: Colors.lightGreenAccent,
+                      activeColor: Colors.green,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 8,
+                    child: Text(
+                      "Benachrichtigungen",
+                      style: TextStyle(
+                        color: ThemeController.activeTheme().headlineColor,
+                        letterSpacing: 2,
+                        fontSize: 16,
                       ),
                     ),
-                    Expanded(
-                      flex: 8,
-                      child: Text(
-                        "Kalender Icon",
-                        style: TextStyle(
-                          color: ThemeController.activeTheme().headlineColor,
-                          letterSpacing: 2,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      flex: 2,
-                      child: Switch(
-                        value: _alert,
-                        onChanged: (value) {
-                          setState(() {
-                            _alert = value;
-                          });
-                        },
-                        activeTrackColor: Colors.lightGreenAccent,
-                        activeColor: Colors.green,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 8,
-                      child: Text(
-                        "Benachrichtigungen",
-                        style: TextStyle(
-                          color: ThemeController.activeTheme().headlineColor,
-                          letterSpacing: 2,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Divider(
-                  height: 20,
-                  color: ThemeController.activeTheme().dividerColor,
-                ),
-                SizedBox(height: 10),
-                joinCalendarButton,
-              ],
-            ),
+                  ),
+                ],
+              ),
+              Divider(
+                height: 20,
+                color: ThemeController.activeTheme().dividerColor,
+              ),
+              const SizedBox(height: 10),
+              joinCalendarButton,
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

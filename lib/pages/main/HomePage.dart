@@ -1,52 +1,69 @@
-import 'package:de/Controllers/ThemeController.dart';
-import 'package:de/Controllers/UserController.dart';
-import 'package:de/Widgets/Dialogs/event_popups.dart';
-import 'package:de/pages/sub/CalendarListSubPage.dart';
-import 'package:de/pages/sub/EventListSubPage.dart';
-import 'package:de/pages/sub/HolidayListSubPage.dart';
+import 'package:xitem/controllers/BirthdayController.dart';
+import 'package:xitem/controllers/CalendarController.dart';
+import 'package:xitem/controllers/EventController.dart';
+import 'package:xitem/controllers/HolidayController.dart';
+import 'package:xitem/controllers/StateController.dart';
+import 'package:xitem/controllers/ThemeController.dart';
+import 'package:xitem/controllers/UserController.dart';
+import 'package:xitem/main.dart';
+import 'package:xitem/models/Calendar.dart';
+import 'package:xitem/models/Event.dart';
+import 'package:xitem/models/SpecialEvent.dart';
+import 'package:xitem/utils/ApiResponseMapper.dart';
+import 'package:xitem/utils/AvatarImageProvider.dart';
+import 'package:xitem/utils/EventListBuilder.dart';
+import 'package:xitem/utils/StateCodeConverter.dart';
+import 'package:xitem/widgets/CalendarList.dart';
 import 'package:flutter/material.dart';
+import 'package:xitem/widgets/SpecialEventList.dart';
+import 'package:xitem/widgets/UpcomingEventList.dart';
+import 'package:xitem/widgets/dialogs/BirthdayDialog.dart';
+import 'package:xitem/widgets/dialogs/EventDialog.dart';
+import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage(this._startIndex);
+  const HomePage(this._initialSubPage, this._userController, this._calendarController, this._holidayController, this._birthdayController, {super.key});
 
-  final int _startIndex;
+  final HomeSubPage _initialSubPage;
+  final UserController _userController;
+  final CalendarController _calendarController;
+  final HolidayController _holidayController;
+  final BirthdayController _birthdayController;
 
   @override
-  _HomePageState createState() => _HomePageState(_startIndex);
+  State<StatefulWidget> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex;
+  late final EventListBuilder _eventListBuilder;
 
-  EventListSubPage _currentEventListWidget;
-  CalendarListSubPage _calendarList;
-  HolidayListSubPage _holidayList;
+  late HomeSubPage _selectedSubPage;
 
-  static final List<AppMenuChoice> _menuChoices = <AppMenuChoice>[
-    const AppMenuChoice(menuStatus: AppMenuStatus.PROFILE, title: 'Account', icon: Icons.account_circle),
-    const AppMenuChoice(menuStatus: AppMenuStatus.SETTINGS, title: 'Einstellungen', icon: Icons.settings),
-    const AppMenuChoice(menuStatus: AppMenuStatus.LOGOUT, title: 'Abmelden', icon: Icons.exit_to_app),
+  static final List<_MenuChoice> _homeMenuChoices = <_MenuChoice>[
+    const _MenuChoice(menuStatus: _AppMenuStatus.profile, title: 'Account', icon: Icons.account_circle),
+    const _MenuChoice(menuStatus: _AppMenuStatus.settings, title: 'Einstellungen', icon: Icons.settings),
+    const _MenuChoice(menuStatus: _AppMenuStatus.logout, title: 'Abmelden', icon: Icons.exit_to_app),
   ];
 
-  static final List<NavigationItem> _widgetOptions = <NavigationItem>[
-    NavigationItem(
-      menuStatus: AppBottomBarStatus.CALENDARS,
+  static final List<_NavigationItem> _navigationOptions = <_NavigationItem>[
+    _NavigationItem(
+      menuStatus: HomeSubPage.calendars,
       appbarTitle: "Deine Kalender",
       bottomBarIcon: Icons.event,
       bottomBarText: "Kalender",
       actionHintText: "Kalender hinzufügen",
       actionIcon: Icons.fiber_new_outlined,
     ),
-    NavigationItem(
-      menuStatus: AppBottomBarStatus.EVENTS,
-      appbarTitle: "Anstehende Events",
+    _NavigationItem(
+      menuStatus: HomeSubPage.events,
+      appbarTitle: "Anstehende Termine",
       bottomBarIcon: Icons.home,
       bottomBarText: "Home",
-      actionHintText: "Event hinzufügen",
+      actionHintText: "Termin hinzufügen",
       actionIcon: Icons.add,
     ),
-    NavigationItem(
-      menuStatus: AppBottomBarStatus.HOLIDAYS,
+    _NavigationItem(
+      menuStatus: HomeSubPage.holidays,
       appbarTitle: "Feiertage",
       bottomBarIcon: Icons.star,
       bottomBarText: "Feiertage",
@@ -55,32 +72,49 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  _HomePageState(_startIndex) {
-    this._selectedIndex = _startIndex;
-  }
-
   @override
   void initState() {
     super.initState();
+    _eventListBuilder = EventListBuilder(widget._calendarController);
+    _eventListBuilder.generateEventList();
 
-    _currentEventListWidget = new EventListSubPage();
-    _calendarList = new CalendarListSubPage();
-    _holidayList = new HolidayListSubPage();
+    _selectedSubPage = widget._initialSubPage;
   }
 
   Widget buildBody() {
-    switch (_widgetOptions.elementAt(_selectedIndex).menuStatus) {
-      case AppBottomBarStatus.EVENTS:
-        return _currentEventListWidget;
-        break;
-      case AppBottomBarStatus.CALENDARS:
-        return _calendarList;
-        break;
-      case AppBottomBarStatus.HOLIDAYS:
-        return _holidayList;
-        break;
+    switch (_selectedSubPage) {
+      case HomeSubPage.events:
+        return UpcomingEventList(
+            widget._calendarController,
+            _eventListBuilder.getGeneratedEventList(),
+            widget._userController.getAuthenticatedUser(),
+            _onCalendarIconTapped,
+                (p0) { },
+            _onEditEvent,
+            _onDeleteEvent
+        );
+      case HomeSubPage.calendars:
+        List<UiCalendarCard> calendarCards = [];
+
+        widget._calendarController.getCalendarMap().values.forEach((calendar) {
+          calendarCards.add(
+              UiCalendarCard(
+                  calendar,
+                  _eventListBuilder.generateCalendarEventHeadline(calendar)
+              )
+          );
+        });
+
+        return CalendarList(calendarCards, _onCalendarIconTapped);
+      case HomeSubPage.holidays:
+        return SpecialEventList(
+          birthdayList: widget._birthdayController.birthdays(),
+          holidayList: widget._holidayController.upcomingHolidays(),
+          currentLoadedStateName: StateCodeConverter.getStateName(Xitem.settingController.getHolidayStateCode()),
+          onDeleteLocalBirthday: onDeleteLocalBirthday,
+        );
       default:
-        return Center(
+        return const Center(
           child: Text("Error: Inhalt fehlerhaft!"),
         );
     }
@@ -91,15 +125,15 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: ThemeController.activeTheme().backgroundColor,
       appBar: AppBar(
-        iconTheme: IconThemeData(color: ThemeController.activeTheme().iconColor, size: 10.0),
+        iconTheme: IconThemeData(color: ThemeController.activeTheme().iconColor, size: 25.0),
         leading: Container(
-          padding: EdgeInsets.all(7),
+          padding: const EdgeInsets.all(7),
           child: CircleAvatar(
-            backgroundImage: FileImage(UserController.user.avatar),
+            backgroundImage: AvatarImageProvider.get(widget._userController.getAuthenticatedUser().avatar),
           ),
         ),
         title: Text(
-          _widgetOptions.elementAt(_selectedIndex).appbarTitle,
+          _navigationOptions.elementAt(_selectedSubPage.index).appbarTitle,
           style: TextStyle(
             color: ThemeController.activeTheme().textColor,
           ),
@@ -107,13 +141,12 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         backgroundColor: ThemeController.activeTheme().foregroundColor,
         actions: <Widget>[
-          // overflow menu
-          PopupMenuButton<AppMenuChoice>(
-            onSelected: _selectMenuChoice,
+          PopupMenuButton<_MenuChoice>(
+            onSelected: _onHomeMenuChoiceTapped,
             color: ThemeController.activeTheme().menuPopupBackgroundColor,
             itemBuilder: (BuildContext context) {
-              return _menuChoices.map((AppMenuChoice choice) {
-                return PopupMenuItem<AppMenuChoice>(
+              return _homeMenuChoices.map((_MenuChoice choice) {
+                return PopupMenuItem<_MenuChoice>(
                   value: choice,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -140,33 +173,33 @@ class _HomePageState extends State<HomePage> {
         child: BottomNavigationBar(
           items: <BottomNavigationBarItem>[
             BottomNavigationBarItem(
-              icon: Icon(_widgetOptions[0].bottomBarIcon),
-              label: _widgetOptions[0].bottomBarText,
+              icon: Icon(_navigationOptions[0].bottomBarIcon),
+              label: _navigationOptions[0].bottomBarText,
             ),
             BottomNavigationBarItem(
-              icon: Icon(_widgetOptions[1].bottomBarIcon),
-              label: _widgetOptions[1].bottomBarText,
+              icon: Icon(_navigationOptions[1].bottomBarIcon),
+              label: _navigationOptions[1].bottomBarText,
             ),
             BottomNavigationBarItem(
-              icon: Icon(_widgetOptions[2].bottomBarIcon),
-              label: _widgetOptions[2].bottomBarText,
+              icon: Icon(_navigationOptions[2].bottomBarIcon),
+              label: _navigationOptions[2].bottomBarText,
             ),
           ],
-          currentIndex: _selectedIndex,
+          currentIndex: _selectedSubPage.index,
           selectedItemColor: ThemeController.activeTheme().globalAccentColor,
           unselectedItemColor: ThemeController.activeTheme().iconColor,
           backgroundColor: ThemeController.activeTheme().foregroundColor,
-          onTap: _onItemTapped,
+          onTap: (index) {
+            _onNavigatorItemTapped(HomeSubPage.values[index]);
+          },
         ),
       ),
-      floatingActionButton: _widgetOptions.elementAt(_selectedIndex).menuStatus == AppBottomBarStatus.HOLIDAYS
-          ? Center()
-          : FloatingActionButton(
-              onPressed: _floatingActionButtonPressed,
+      floatingActionButton: FloatingActionButton(
+              onPressed: _onActionButtonPressed,
               backgroundColor: ThemeController.activeTheme().actionButtonColor,
-              tooltip: _widgetOptions.elementAt(_selectedIndex).actionHintText,
+              tooltip: _navigationOptions.elementAt(_selectedSubPage.index).actionHintText,
               child: Icon(
-                _widgetOptions.elementAt(_selectedIndex).actionIcon,
+                _navigationOptions.elementAt(_selectedSubPage.index).actionIcon,
                 color: ThemeController.activeTheme().textColor,
                 size: 30,
               ),
@@ -175,53 +208,249 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _floatingActionButtonPressed() async {
-    if (_widgetOptions.elementAt(_selectedIndex).menuStatus == AppBottomBarStatus.CALENDARS) {
-      await Navigator.pushNamed(context, '/createCalendar');
-    } else if (_widgetOptions.elementAt(_selectedIndex).menuStatus == AppBottomBarStatus.EVENTS) {
-      var keyList = UserController.calendarList.keys.toList();
+  void _onActionButtonPressed() async {
+    if (_navigationOptions.elementAt(_selectedSubPage.index).menuStatus == HomeSubPage.calendars) {
+      StateController.navigatorKey.currentState?.pushNamed('/createCalendar').then((value) => setState(() => {}));
+    } else if (_navigationOptions.elementAt(_selectedSubPage.index).menuStatus == HomeSubPage.events) {
+      Map<String, Calendar> calendars = widget._calendarController.getCalendarMap();
 
-      if (keyList.isNotEmpty) {
-        EventData newEvent = await EventPopup.showEventSettingDialog(
-          keyList[0],
-          initTime: DateTime.now(),
-          calendarChangeable: true,
-        );
-
-        if (newEvent != null) {
-          _currentEventListWidget.addEvent(newEvent);
-        }
+      if (calendars.isNotEmpty) {
+        _onCreateEvent(calendars.values.toList());
       } else {
-        await Navigator.pushNamed(context, '/createCalendar');
+        StateController.navigatorKey.currentState?.pushNamed('/createCalendar').then((value) => setState(() => {}));
       }
+    } else if (_navigationOptions.elementAt(_selectedSubPage.index).menuStatus == HomeSubPage.holidays) {
+      onCreateLocalBirthday();
     }
   }
 
-  void _onItemTapped(int index) {
+  void _onNavigatorItemTapped(HomeSubPage subPage) {
     setState(() {
-      _selectedIndex = index;
+      _selectedSubPage = subPage;
     });
   }
 
-  void _selectMenuChoice(AppMenuChoice choice) async {
-    if (choice.menuStatus == AppMenuStatus.LOGOUT) {
-      await UserController.logout();
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (Route<dynamic> route) => false);
-    } else if (choice.menuStatus == AppMenuStatus.PROFILE) {
-      Navigator.pushNamed(context, "/profile").then((_) => setState(() {}));
-    } else if (choice.menuStatus == AppMenuStatus.SETTINGS) {
-      Navigator.pushNamed(context, "/settings").then((_) => setState(() {
-        _currentEventListWidget.refreshState();
-        _holidayList.refreshState();
-      }));
+  void _onHomeMenuChoiceTapped(_MenuChoice choice) {
+    if (choice.menuStatus == _AppMenuStatus.logout) {
+      StateController.safeLogout().then((responseCode) {
+        if(responseCode == ResponseCode.success) {
+          StateController.navigatorKey.currentState?.pushNamedAndRemoveUntil('/startup', (Route<dynamic> route) => false);
+        }
+      });
+    } else if (choice.menuStatus == _AppMenuStatus.profile) {
+      StateController.navigatorKey.currentState?.pushNamed("/profile").then((_) => setState(() {}));
+    } else if (choice.menuStatus == _AppMenuStatus.settings) {
+      StateController.navigatorKey.currentState?.pushNamed("/settings").then((_) => setState(() {}));
+    }
+  }
+
+  void _onCalendarIconTapped(String selectedCalendar) {
+    StateController.navigatorKey.currentState?.pushNamed("/calendar", arguments: selectedCalendar).then((value) => setState(() {
+      _eventListBuilder.generateEventList();
+    }));
+  }
+
+  void _onCreateEvent(List<Calendar> calendars) async {
+    EventData? newEvent = await EventDialog.showEventSettingDialog(
+      calendars.first,
+      calendars,
+      calendarChangeable: true,
+      initTime: DateTime.now(),
+    );
+
+    if (newEvent == null) {
+      return;
+    }
+
+    EventController? eventController = widget._calendarController.getCalendar(newEvent.selectedCalendar)?.eventController;
+
+    if (eventController == null) {
+      StandardDialog.okDialog("Event konnten nicht erstellt werden!", "Der Ausgewählte Kalender konnte nicht gefunden werden!");
+      return;
+    }
+
+    StandardDialog.loadingDialog("Erstelle Event...");
+
+    ResponseCode createEvent = await eventController.createEvent(newEvent).catchError((e) {
+      StateController.navigatorKey.currentState?.pop();
+      return ResponseCode.unknown;
+    });
+
+    if (createEvent != ResponseCode.success) {
+      StateController.navigatorKey.currentState?.pop();
+
+      String errorMessage;
+
+      switch(createEvent) {
+        case ResponseCode.missingArgument:
+          errorMessage = "Bitte füllen Sie alle Pflichtfelder aus.";
+          break;
+        case ResponseCode.invalidTitle:
+          errorMessage = "Unzulässiger Titel. Titel muss mindestens 3 Zeichen lang sein.";
+          break;
+        case ResponseCode.endBeforeStart:
+          errorMessage = "Das Enddatum muss nach dem Startdatum liegen.";
+          break;
+        case ResponseCode.startAfter1900:
+          errorMessage = "Das Startdatum muss nach dem 01.01.1900 liegen.";
+          break;
+        case ResponseCode.accessForbidden:
+        case ResponseCode.insufficientPermissions:
+          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
+          break;
+        case ResponseCode.invalidColor:
+          errorMessage = "Unzulässige Farbe.";
+          break;
+        default:
+          errorMessage = "Beim Erstellen des Events ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
+      }
+
+      StandardDialog.okDialog("Event konnte nicht erstellt werden!", errorMessage);
+      return;
+    }
+
+    _eventListBuilder.generateEventList();
+
+    setState(() {});
+
+    StateController.navigatorKey.currentState?.pop();
+  }
+
+  void _onEditEvent(UiEvent eventToEdit) async {
+    Calendar? calendar = widget._calendarController.getCalendar(eventToEdit.calendar.id);
+    EventController? eventController = widget._calendarController.getCalendar(eventToEdit.calendar.id)?.eventController;
+    if (calendar == null || eventController == null) {
+      return;
+    }
+
+    Event? event = eventController.getEvent(eventToEdit.event.eventID);
+    if(event == null) {
+      return;
+    }
+
+    List<Calendar> calendarList = widget._calendarController.getCalendarMap().values.toList();
+    EventData? editedEvent = await EventDialog.showEventSettingDialog(calendar, calendarList, event: event);
+    if (editedEvent == null) {
+      return;
+    }
+
+    StandardDialog.loadingDialog("Speichere Änderungen...");
+
+    ResponseCode editEvent = await eventController.editEvent(eventToEdit.event.eventID, editedEvent.startDate, editedEvent.endDate, editedEvent.title, editedEvent.description, editedEvent.daylong, editedEvent.color).catchError((e) {
+      StateController.navigatorKey.currentState?.pop();
+      return ResponseCode.unknown;
+    });
+
+    if(editEvent != ResponseCode.success) {
+      String errorMessage;
+
+      switch(editEvent) {
+        case ResponseCode.accessForbidden:
+        case ResponseCode.insufficientPermissions:
+          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
+          break;
+        case ResponseCode.eventNotFound:
+          errorMessage = "Event konnte nicht gefunden werden.";
+          break;
+        case ResponseCode.invalidColor:
+          errorMessage = "Unzulässige Farbe.";
+          break;
+        case ResponseCode.invalidTitle:
+          errorMessage = "Unzulässiger Titel. Titel muss mindestens 3 Zeichen lang sein.";
+          break;
+        case ResponseCode.startAfter1900:
+          errorMessage = "Das Startdatum muss nach dem 01.01.1900 liegen.";
+          break;
+        case ResponseCode.endBeforeStart:
+          errorMessage = "Das Enddatum muss nach dem Startdatum liegen.";
+          break;
+        default:
+          errorMessage = "Die Änderungen konnten nicht gespeichert werden werden, versuch es später erneut.";
+      }
+
+      StandardDialog.okDialog("Änderungen konnten nicht gespeichert werden!", errorMessage);
+      return;
+    }
+
+   _eventListBuilder.generateEventList();
+
+    setState(() {
+      _eventListBuilder.generateEventList();
+    });
+
+    StateController.navigatorKey.currentState?.pop();
+  }
+
+  void _onDeleteEvent(UiEvent eventToDelete) async {
+    EventController? eventController = widget._calendarController.getCalendar(eventToDelete.calendar.id)?.eventController;
+    if (eventController == null) {
+      return;
+    }
+
+    ConfirmAction? confirm = await StandardDialog.confirmDialog("Event löschen?", "Willst du das Event wirklich löschen? Das Event wird endgültig gelöscht und kann nicht wiederhergestellt werden!");
+
+    if (confirm != ConfirmAction.ok) {
+      return;
+    }
+
+    StandardDialog.loadingDialog("Lösche Event...");
+
+    ResponseCode deleteEvent = await eventController.removeEvent(eventToDelete.event.eventID).catchError((e) {
+      StateController.navigatorKey.currentState?.pop();
+      return ResponseCode.unknown;
+    });
+
+    if(deleteEvent != ResponseCode.success) {
+      String errorMessage;
+
+      switch(deleteEvent) {
+        case ResponseCode.accessForbidden:
+        case ResponseCode.insufficientPermissions:
+          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu löschen. Bitte wende dich an den Kalenderadministrator";
+          break;
+        default:
+          errorMessage = "Beim Löschen des Events ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
+      }
+
+      StateController.navigatorKey.currentState?.pop();
+      StandardDialog.okDialog("Event konnte nicht gelöscht werden!", errorMessage);
+      return;
+    }
+
+    _eventListBuilder.generateEventList();
+
+    setState(() {
+      _eventListBuilder.generateEventList();
+    });
+
+    StateController.navigatorKey.currentState?.pop();
+  }
+
+  void onCreateLocalBirthday() async {
+    LocalBirthday? newBirthday = await BirthdayDialog.showBirthdayDialog();
+
+    StandardDialog.loadingDialog("Füge Geburtstag hinzu...");
+    if(newBirthday != null) {
+      await widget._birthdayController.addBirthdayToLocalStorage(newBirthday);
+    }
+    StateController.navigatorKey.currentState?.pop();
+  }
+
+  void onDeleteLocalBirthday(Birthday birthday) async {
+    ConfirmAction? deleteBirthday = await StandardDialog.confirmDialog("Geburtstag entfernen", "Willst du den Geburtstag von ${birthday.name} aus der Liste entfernen?");
+    String? uuid = birthday.localID;
+
+    if(deleteBirthday == ConfirmAction.ok && uuid != null) {
+      await widget._birthdayController.removeBirthdayFromLocalStorage(uuid);
+      setState(() {});
     }
   }
 }
 
-class NavigationItem {
-  NavigationItem({this.menuStatus, this.appbarTitle, this.bottomBarIcon, this.bottomBarText, this.actionHintText, this.actionIcon});
+class _NavigationItem {
+  _NavigationItem({required this.menuStatus, required this.appbarTitle, required this.bottomBarIcon, required this.bottomBarText, required this.actionHintText, required this.actionIcon});
 
-  final AppBottomBarStatus menuStatus;
+  final HomeSubPage menuStatus;
   final String appbarTitle;
 
   final IconData bottomBarIcon;
@@ -231,14 +460,14 @@ class NavigationItem {
   final IconData actionIcon;
 }
 
-class AppMenuChoice {
-  const AppMenuChoice({this.menuStatus, this.title, this.icon});
+class _MenuChoice {
+  const _MenuChoice({required this.menuStatus, required this.title, required this.icon});
 
-  final AppMenuStatus menuStatus;
+  final _AppMenuStatus menuStatus;
   final String title;
   final IconData icon;
 }
 
-enum AppMenuStatus { LOGOUT, SETTINGS, PROFILE }
-enum AppBottomBarStatus { EVENTS, CALENDARS, HOLIDAYS }
+enum _AppMenuStatus { logout, settings, profile }
+enum HomeSubPage { calendars, events, holidays }
 
