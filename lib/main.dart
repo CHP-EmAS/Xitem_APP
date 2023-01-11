@@ -3,7 +3,6 @@ import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:xitem/pages/main/StartUpPage.dart';
 
@@ -19,7 +18,7 @@ void main() async {
 class Xitem extends StatefulWidget {
   const Xitem({super.key});
 
-  static const String appVersion = "1.2.0";
+  static const String appVersion = "1.3.0";
   static final SettingController settingController = SettingController();
 
   @override

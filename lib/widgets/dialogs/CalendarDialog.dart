@@ -117,7 +117,7 @@ class CalendarDialog {
                         Expanded(
                           flex: 3,
                           child: Text(
-                            "kann Events erstellen",
+                            "kann Termine erstellen",
                             style: TextStyle(color: ThemeController.activeTheme().headlineColor, letterSpacing: 2),
                           ),
                         ),
@@ -145,7 +145,7 @@ class CalendarDialog {
                         Expanded(
                           flex: 3,
                           child: Text(
-                            "kann Events von anderen Mitgliedern bearbeiten/löschen",
+                            "kann Termine von anderen Mitgliedern bearbeiten/löschen",
                             style: TextStyle(color: ThemeController.activeTheme().headlineColor, letterSpacing: 2),
                           ),
                         ),
@@ -290,7 +290,7 @@ class CalendarDialog {
                         Expanded(
                           flex: 3,
                           child: Text(
-                            "Events erstellen",
+                            "Termine erstellen",
                             style: TextStyle(color: ThemeController.activeTheme().headlineColor, letterSpacing: 2),
                           ),
                         ),
@@ -314,7 +314,7 @@ class CalendarDialog {
                         Expanded(
                           flex: 3,
                           child: Text(
-                            "Events von anderen Mitgliedern bearbeiten/löschen",
+                            "Termine von anderen Mitgliedern bearbeiten/löschen",
                             style: TextStyle(color: ThemeController.activeTheme().headlineColor, letterSpacing: 2),
                           ),
                         ),

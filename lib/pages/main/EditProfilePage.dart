@@ -14,10 +14,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage(this._userController, this._authenticationApi, {super.key});
+  const EditProfilePage({super.key, required this.userController, required this.authenticationApi});
 
-  final UserController _userController;
-  final AuthenticationApi _authenticationApi;
+  final UserController userController;
+  final AuthenticationApi authenticationApi;
 
   @override
   State<StatefulWidget> createState() => _EditProfilePageState();
@@ -39,8 +39,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   void initState() {
-    _name.text = widget._userController.getAuthenticatedUser().name;
-    _birthday = widget._userController.getAuthenticatedUser().birthday;
+    _name.text = widget.userController.getAuthenticatedUser().name;
+    _birthday = widget.userController.getAuthenticatedUser().birthday;
 
     if(_birthday != null) {
       _birthdayText.text = birthdayFormat.format(_birthday!);
@@ -97,7 +97,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
 
-    final saveProfileButton = LoadingButton("Speichern", "Gespeichert", Colors.amber, _saveProfile);
+    final saveProfileButton = LoadingButton(buttonText: "Speichern", successText: "Gespeichert", buttonColor: Colors.amber, callBack: _saveProfile);
 
     final oldPasswordField = TextField(
       obscureText: true,
@@ -138,7 +138,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
-    final changePasswordButton = LoadingButton("Passwort ändern", "Passwort gespeichert", Colors.amber, _changePassword);
+    final changePasswordButton = LoadingButton(buttonText: "Passwort ändern", successText: "Passwort gespeichert", buttonColor: Colors.amber, callBack: _changePassword);
 
     return Scaffold(
         appBar: AppBar(
@@ -169,7 +169,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         child: GestureDetector(
                           onTap: _changeProfilePicture,
                           child: CircleAvatar(
-                            backgroundImage: AvatarImageProvider.get(widget._userController.getAuthenticatedUser().avatar),
+                            backgroundImage: AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
                             radius: 60,
                             child: Icon(Icons.add_a_photo, size: 50, color: ThemeController.activeTheme().iconColor),
                           ),
@@ -236,7 +236,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<bool> _saveProfile() async {
     FocusScope.of(context).unfocus();
 
-    return await widget._userController.changeUserInformation(_name.text, _birthday).then((changeUser) async {
+    return await widget.userController.changeUserInformation(_name.text, _birthday).then((changeUser) async {
       if (changeUser != ResponseCode.success) {
         String errorMessage;
 
@@ -266,7 +266,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (_oldPassword.text == "" || _newPassword.text == "" || _repeatPassword.text == "") return false;
 
-    return await widget._authenticationApi.changePassword(ChangePasswordRequest(_oldPassword.text, _newPassword.text, _repeatPassword.text)).then((changePassword) async {
+    return await widget.authenticationApi.changePassword(ChangePasswordRequest(_oldPassword.text, _newPassword.text, _repeatPassword.text)).then((changePassword) async {
       if (changePassword != ResponseCode.success) {
         String errorMessage;
 
@@ -311,7 +311,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     StandardDialog.loadingDialog("Speichere Profilbild...");
 
-    ResponseCode changeAvatar = await widget._userController.changeAvatar(pickedImage);
+    ResponseCode changeAvatar = await widget.userController.changeAvatar(pickedImage);
 
     StateController.navigatorKey.currentState?.pop();
 

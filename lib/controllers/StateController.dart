@@ -14,6 +14,7 @@ import 'package:xitem/models/CalendarMember.dart';
 import 'package:xitem/pages/main/CalendarPage.dart';
 import 'package:xitem/pages/main/CalendarSettingsPage.dart';
 import 'package:xitem/pages/main/EditProfilePage.dart';
+import 'package:xitem/pages/main/EventPage.dart';
 import 'package:xitem/pages/main/HomePage.dart';
 import 'package:xitem/pages/main/LoginPage.dart';
 import 'package:xitem/pages/main/NewCalendarPage.dart';
@@ -66,6 +67,7 @@ class StateController {
     ResponseCode init = await _initializeController(userID);
 
     if(init != ResponseCode.success) {
+      _appState = AppState.loggedOut;
       return init;
     }
 
@@ -118,36 +120,41 @@ class StateController {
       case '/startup':
         return MaterialPageRoute(maintainState: false, builder: (_) => const StartUpPage());
       case '/login':
-        return MaterialPageRoute(builder: (_) => LoginPage(_authenticationApi));
+        return MaterialPageRoute(builder: (_) => LoginPage(authenticationApi: _authenticationApi));
       case '/register':
-        return MaterialPageRoute(builder: (_) => RegisterPage(_authenticationApi));
+        return MaterialPageRoute(builder: (_) => RegisterPage(authenticationApi: _authenticationApi));
       case '/home':
-        return MaterialPageRoute(builder: (_) => HomePage(HomeSubPage.events, _userController, _calendarController, _holidayController, _birthdayController));
+        return MaterialPageRoute(builder: (_) => HomePage(initialSubPage: HomeSubPage.events, userController: _userController, calendarController: _calendarController, holidayController: _holidayController, birthdayController: _birthdayController));
       case '/home/calendar':
-        return MaterialPageRoute(builder: (_) => HomePage(HomeSubPage.calendars, _userController, _calendarController, _holidayController, _birthdayController));
+        return MaterialPageRoute(builder: (_) => HomePage(initialSubPage: HomeSubPage.calendars, userController: _userController, calendarController: _calendarController, holidayController: _holidayController, birthdayController: _birthdayController));
       case '/calendar':
         if(args is String) {
-          return MaterialPageRoute(builder: (_) => CalendarPage(args, _calendarController, _userController, _holidayController, _birthdayController));
+          return MaterialPageRoute(builder: (_) => CalendarPage(linkedCalendarID: args, userController: _userController, calendarController: _calendarController, holidayController: _holidayController, birthdayController: _birthdayController));
         }
         break;
       case '/calendar/settings':
         if(args is String) {
-          return MaterialPageRoute(builder: (_) => CalendarSettingsPage(args, _calendarController, _userController));
+          return MaterialPageRoute(builder: (_) => CalendarSettingsPage(linkedCalendarID:args, userController: _userController, calendarController: _calendarController));
         }
         break;
       case '/calendar/notes':
         if(args is String) {
-          return MaterialPageRoute(builder: (_) => NotesPage(args, _calendarController, _userController));
+          return MaterialPageRoute(builder: (_) => NotesPage(linkedCalendarID: args, userController: _userController, calendarController: _calendarController));
+        }
+        break;
+      case '/event':
+        if(args is EventPageArguments) {
+          return MaterialPageRoute(builder: (_) => EventPage(arguments: args));
         }
         break;
       case '/profile':
         return MaterialPageRoute(builder: (_) => ProfilePage(_userController.getAuthenticatedUser()));
       case '/editProfile':
-        return MaterialPageRoute(builder: (_) => EditProfilePage(_userController, _authenticationApi));
+        return MaterialPageRoute(builder: (_) => EditProfilePage(userController: _userController, authenticationApi: _authenticationApi));
       case '/createCalendar':
-        return MaterialPageRoute(builder: (_) => NewCalendarPage(_calendarController));
+        return MaterialPageRoute(builder: (_) => NewCalendarPage(calendarController: _calendarController));
       case '/settings':
-        return MaterialPageRoute(builder: (_) => SettingsPage(_holidayController, _userController, _authenticationApi));
+        return MaterialPageRoute(builder: (_) => SettingsPage(userController: _userController, authenticationApi: _authenticationApi, holidayController: _holidayController,));
     }
 
     return MaterialPageRoute(builder: (_) => _ErrorPage());
@@ -159,14 +166,14 @@ class StateController {
     UserController userController = UserController(_userApi);
     ResponseCode initUserController = await userController.initialize(loggedInUserID);
     if(initUserController != ResponseCode.success) {
-      print("Initializing UserController failed with Code:$initUserController");
+      debugPrint("Initializing UserController failed with Code:$initUserController");
       return initUserController;
     }
 
     CalendarController calendarController = CalendarController(_calendarApi, _authenticationApi, _eventApi, _calendarMemberApi, _noteApi);
     ResponseCode initCalendarController = await calendarController.initialize(userController.getAuthenticatedUser().id);
     if(initCalendarController != ResponseCode.success) {
-      print("Initializing CalendarController failed with Code:$initCalendarController");
+      debugPrint("Initializing CalendarController failed with Code:$initCalendarController");
       return initCalendarController;
     }
 
@@ -179,14 +186,14 @@ class StateController {
     HolidayController holidayController = HolidayController(_holidayApi);
     ResponseCode initHolidayController = await holidayController.initialize();
     if(initHolidayController != ResponseCode.success) {
-      print("Initializing HolidayController failed with Code:$initHolidayController");
+      debugPrint("Initializing HolidayController failed with Code:$initHolidayController");
       return initHolidayController;
     }
 
     BirthdayController birthdayController = BirthdayController(userController);
     ResponseCode initBirthdayController = await birthdayController.initialize();
     if(initBirthdayController != ResponseCode.success) {
-      print("Initializing BirthdayController failed with Code:$initBirthdayController");
+      debugPrint("Initializing BirthdayController failed with Code:$initBirthdayController");
       return initHolidayController;
     }
 

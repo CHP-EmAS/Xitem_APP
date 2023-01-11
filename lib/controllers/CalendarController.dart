@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:xitem/api/AuthenticationApi.dart';
 import 'package:xitem/api/CalendarApi.dart';
@@ -50,7 +48,7 @@ class CalendarController {
   }
 
   Future<ResponseCode> _loadAllCalendars(String userID) async {
-    print("Loading calendar list...");
+    debugPrint("Loading calendar list...");
 
     ApiResponse<List<LoadedCalendarData>> loadAllCalendars = await _calendarApi.loadAllCalendars(userID);
 
@@ -242,14 +240,14 @@ class CalendarController {
     return ResponseCode.success;
   }
 
-  Future<ResponseCode> changeCalendarInformation(String calendarID, String name, bool canJoin, String? password) async {
+  Future<ResponseCode> changeCalendarInformation(String calendarID, String name, bool canJoin, Map<int, String> colorLegend, String? password) async {
     if(!_isInitialized) {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
 
     if (password == "") password = null;
 
-    ResponseCode patchCalendar = await _calendarApi.patchCalendar(calendarID, PatchCalendarRequest(name, canJoin, password));
+    ResponseCode patchCalendar = await _calendarApi.patchCalendar(calendarID, PatchCalendarRequest(name, canJoin, colorLegend, password));
     if (patchCalendar != ResponseCode.success) {
       return patchCalendar;
     }
@@ -323,7 +321,8 @@ class CalendarController {
         canJoin: data.canJoin,
         creationDate: data.creationDate,
         color: data.color,
-        icon: data.icon
+        icon: data.icon,
+        colorLegend: data.colorLegend
     );
   }
 

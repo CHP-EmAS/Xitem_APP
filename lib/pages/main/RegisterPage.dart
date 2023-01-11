@@ -8,9 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage(this._authenticationApi, {super.key});
+  const RegisterPage({super.key, required this.authenticationApi});
 
-  final AuthenticationApi _authenticationApi;
+  final AuthenticationApi authenticationApi;
 
   @override
   State<StatefulWidget> createState() => _RegisterPageState();
@@ -88,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
 
-    final registerButton = LoadingButton("Registrieren", "Registriert", Colors.amber, _registerClick);
+    final registerButton = LoadingButton(buttonText: "Registrieren", successText: "Registriert", buttonColor: Colors.amber, callBack: _registerClick);
 
     return Scaffold(
       appBar: AppBar(
@@ -146,7 +146,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<bool> _registerClick() async {
     if (_email.text == "" || _name.text == "") return false;
 
-    return await widget._authenticationApi.register(UserRegistrationRequest(_email.text, _name.text, _birthday)).then((registerEmail) async {
+    return await widget.authenticationApi.register(UserRegistrationRequest(_email.text, _name.text, _birthday)).then((registerEmail) async {
       if (registerEmail != ResponseCode.success) {
         switch(registerEmail) {
           case ResponseCode.emailExistsError:

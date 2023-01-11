@@ -4,7 +4,6 @@ import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/controllers/UserController.dart';
 import 'package:xitem/main.dart';
-import 'package:xitem/models/SpecialEvent.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 import 'package:xitem/utils/StateCodeConverter.dart';
 import 'package:xitem/widgets/dialogs/StandardDialog.dart';
@@ -13,11 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage(this._holidayController, this._userController, this._authenticationApi, {super.key});
+  const SettingsPage({super.key, required this.holidayController, required this.userController, required this.authenticationApi});
 
-  final HolidayController _holidayController;
-  final UserController _userController;
-  final AuthenticationApi _authenticationApi;
+  final HolidayController holidayController;
+  final UserController userController;
+  final AuthenticationApi authenticationApi;
   
   @override
   State<StatefulWidget> createState() => _SettingsPageState();
@@ -31,8 +30,8 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
 
   late int _eventStandardColor;
 
-  late bool _showBirthdaysOnHolidayScreen;
-  late bool _showNewVotingOnEventScreen;
+  late bool _showBirthdaysInCalendar;
+  late bool _showHolidaysInCalendar;
 
   String _apiVersion = "Lade...";
 
@@ -72,8 +71,8 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
             const SizedBox(height: 18,),
 
             _buildHeadline("Erscheinungsbild"),
-            _buildSetting(Icon(Icons.circle, size: 30, color: ThemeController.getEventColor(_eventStandardColor),), "Standard-Farbe für neue Events", "", (() async {
-              int? newColor = await PickerDialog.eventColorPickerDialog(_eventStandardColor);
+            _buildSetting(Icon(Icons.circle, size: 30, color: ThemeController.getEventColor(_eventStandardColor),), "Standard-Farbe für neue Termine", "", (() async {
+              int? newColor = await PickerDialog.eventColorPickerDialog(initialColor: _eventStandardColor);
 
               if(newColor != null) {
                 await Xitem.settingController.setEventStandardColor(newColor);
@@ -82,20 +81,19 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
                 });
               }
             })),
-            _buildSwitchSetting(const Icon(Icons.cake, size: 30,), "Zeige Geburtstage von anderen Mitgliedern", _showBirthdaysOnHolidayScreen, (value) async {
-              await Xitem.settingController.setShowBirthdaysOnHolidayScreen(value);
+            _buildSwitchSetting(const Icon(Icons.visibility, size: 30,), "Zeige Geburtstage im Kalender an", _showBirthdaysInCalendar, (value) async {
+              await Xitem.settingController.setShowBirthdaysInCalendarScreen(value);
               setState(() {
-                _showBirthdaysOnHolidayScreen = Xitem.settingController.getShowBirthdaysOnHolidayScreen();
+                _showBirthdaysInCalendar = Xitem.settingController.getShowBirthdaysInCalendarScreen();
               });
             }),
-            _buildSwitchSetting(const Icon(Icons.how_to_vote, size: 30,), "Zeige neue Abstimmung im Home Bereich", _showNewVotingOnEventScreen, (value) async {
-              await Xitem.settingController.setShowNewVotingOnEventScreen(value);
+            _buildSwitchSetting(const Icon(Icons.visibility, size: 30,), "Zeige Feiertage im Kalender an", _showHolidaysInCalendar, (value) async {
+              await Xitem.settingController.setShowHolidaysInCalendarScreen(value);
               setState(() {
-                _showNewVotingOnEventScreen = Xitem.settingController.getShowNewVotingOnEventScreen();
+                _showHolidaysInCalendar = Xitem.settingController.getShowHolidaysInCalendarScreen();
               });
             }),
             const SizedBox(height: 18,),
-
             _buildHeadline("Profil"),
             _buildSetting(const Icon(Icons.info_outline, size: 30, color: Colors.blue,), "Profildaten anfordern", "", (() {
               _sendProfileInformationMail();
@@ -104,7 +102,6 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
               _sendProfileDeletionMail();
             })),
             const SizedBox(height: 18,),
-
             _buildHeadline("App Info"),
             const SizedBox(height: 15,),
             SizedBox(
@@ -125,7 +122,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
                 Text("Clemens Hübner ", style: TextStyle(fontSize: 12),),
-                Text("©2021", style: TextStyle(color: Colors.amber, fontSize: 12),),
+                Text("©2023", style: TextStyle(color: Colors.amber, fontSize: 12),),
               ],
             ),
             const SizedBox(height: 30,),
@@ -208,8 +205,8 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     _timeZone = Xitem.settingController.getTimeZone();
     _holidayStateCode = Xitem.settingController.getHolidayStateCode();
     _eventStandardColor = Xitem.settingController.getEventStandardColor();
-    _showBirthdaysOnHolidayScreen = Xitem.settingController.getShowBirthdaysOnHolidayScreen();
-    _showNewVotingOnEventScreen = Xitem.settingController.getShowNewVotingOnEventScreen();
+    _showBirthdaysInCalendar = Xitem.settingController.getShowBirthdaysInCalendarScreen();
+    _showHolidaysInCalendar = Xitem.settingController.getShowHolidaysInCalendarScreen();
 
     StateController.getApiInfo().then((apiInfoRequest) {
       String? strApiInfo = apiInfoRequest.value;
@@ -259,7 +256,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
 
       StandardDialog.loadingDialog("Lade Feiertage...");
 
-      ResponseCode reloadHolidays = await widget._holidayController.loadHolidays(_holidayStateCode);
+      ResponseCode reloadHolidays = await widget.holidayController.loadHolidays(_holidayStateCode);
 
       if (reloadHolidays != ResponseCode.success) {
         StateController.navigatorKey.currentState?.pop();
@@ -273,13 +270,13 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
   }
 
   void _sendProfileInformationMail() async {
-    final ConfirmAction? answer = await StandardDialog.confirmDialog("Profildaten anfordern?", "Hier kannst du alle Daten die Xitem über dich gespeichert hat anfordern. Die Daten werden dir per Mail an\n${widget._userController.getAuthenticatedUser().email}\ngesendet. Möchtest du fortfahren?");
+    final ConfirmAction? answer = await StandardDialog.confirmDialog("Profildaten anfordern?", "Hier kannst du alle Daten die Xitem über dich gespeichert hat anfordern. Die Daten werden dir per Mail an\n${widget.userController.getAuthenticatedUser().email}\ngesendet. Möchtest du fortfahren?");
 
     if (answer == ConfirmAction.ok) {
       final password = await StandardDialog.passwordDialog();
 
       if (password != null) {
-        ResponseCode sendEmail = await widget._authenticationApi.requestProfileInformationEmail(widget._userController.getAuthenticatedUser().id, password);
+        ResponseCode sendEmail = await widget.authenticationApi.requestProfileInformationEmail(widget.userController.getAuthenticatedUser().id, password);
 
         if (sendEmail != ResponseCode.success) {
           StandardDialog.okDialog("Email konnte nicht gesendet werden!", "Code: $sendEmail");
@@ -294,14 +291,14 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
   void _sendProfileDeletionMail() async {
     final ConfirmAction? answer = await StandardDialog.confirmDialog(
         "Profil löschen?",
-        "Hier kannst du dein Xitem Account löschen. Nach der Löschung kann dein Account nicht mehr wiederhergestellt werden. Die Löschung muss per Mail bestätigt werden. Wir senden die Mail an\n${widget._userController.getAuthenticatedUser().email}\nMöchtest du fortfahren?"
+        "Hier kannst du dein Xitem Account löschen. Nach der Löschung kann dein Account nicht mehr wiederhergestellt werden. Die Löschung muss per Mail bestätigt werden. Wir senden die Mail an\n${widget.userController.getAuthenticatedUser().email}\nMöchtest du fortfahren?"
     );
 
     if (answer == ConfirmAction.ok) {
       final password = await StandardDialog.passwordDialog();
 
       if (password != "" && password != null) {
-        ResponseCode sendEmail = await widget._authenticationApi.requestProfileDeletionEmail(widget._userController.getAuthenticatedUser().id, password);
+        ResponseCode sendEmail = await widget.authenticationApi.requestProfileDeletionEmail(widget.userController.getAuthenticatedUser().id, password);
 
         if (sendEmail != ResponseCode.success) {
           StandardDialog.okDialog("Email konnte nicht gesendet werden!", "Code: $sendEmail");

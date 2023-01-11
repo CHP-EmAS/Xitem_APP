@@ -37,7 +37,7 @@ class StateCodeConverter {
       case StateCode.sh:
         return "Schleswig-Holstein";
       case StateCode.th:
-        return "Thueringen";
+        return "Thüringen";
       default:
         return "Unbekannt";
     }

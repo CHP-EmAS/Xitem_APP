@@ -5,7 +5,7 @@ import 'package:xitem/controllers/NoteController.dart';
 
 
 class Calendar {
-  Calendar({required this.eventController, required this.calendarMemberController, required this.noteController, required this.id, required String fullName, required this.canJoin, required String creationDate, required this.color, required this.icon}) :
+  Calendar({required this.eventController, required this.calendarMemberController, required this.noteController, required this.id, required String fullName, required this.canJoin, required String creationDate, required this.color, required this.icon, required this.colorLegend}) :
         name = fullName.split('#')[0],
         hash = fullName.split('#')[1],
         creationDate = DateTime.parse(creationDate);
@@ -23,5 +23,5 @@ class Calendar {
   IconData icon;
   bool canJoin;
 
-  final Map<int, String> colorLegend = {};
+  final Map<int, String> colorLegend;
 }

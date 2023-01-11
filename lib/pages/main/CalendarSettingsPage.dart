@@ -21,11 +21,11 @@ import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 import 'package:xitem/widgets/dialogs/UserDialog.dart';
 
 class CalendarSettingsPage extends StatefulWidget {
-  const CalendarSettingsPage(this._linkedCalendarID, this._calendarController, this._userController, {super.key});
+  const CalendarSettingsPage({super.key, required this.linkedCalendarID, required this.calendarController, required this.userController});
 
-  final String _linkedCalendarID;
-  final CalendarController _calendarController;
-  final UserController _userController;
+  final String linkedCalendarID;
+  final CalendarController calendarController;
+  final UserController userController;
 
   @override
   State<StatefulWidget> createState() => _CalendarSettingsPageState();
@@ -46,11 +46,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   bool _alert = true;
   int _currentColor = 0;
   IconData _currentIcon = IconPicker.defaultIcons[0];
-
-  final Map<int, String> _colorLegend = <int, String>{
-    13: "TEST",
-    2: "TEST 2",
-  };
+  Map<int, String> _colorLegend = {};
   bool _colorLegendIsOpen = false;
 
   @override
@@ -66,11 +62,12 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   }
 
   bool _getLinkedCalendar() {
-    _linkedCalendar = widget._calendarController.getCalendar(widget._linkedCalendarID);
+    _linkedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
 
     _currentColor = _linkedCalendar?.color ?? 0;
     _currentIcon = _linkedCalendar?.icon ?? Icons.error_outline_outlined;
 
+    _colorLegend = Map.of(_linkedCalendar?.colorLegend ?? {});
     _name.text = _linkedCalendar?.name ?? "Error";
     _canJoin = _linkedCalendar?.canJoin ?? false;
 
@@ -89,7 +86,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
     });
 
     for (CalendarMember memberData in linkedCalendar.calendarMemberController.getMemberList()) {
-      ApiResponse<User> getUser = await widget._userController.getUser(memberData.userID);
+      ApiResponse<User> getUser = await widget.userController.getUser(memberData.userID);
       User? userData = getUser.value;
 
       if (userData == null) {
@@ -111,10 +108,10 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
       return const Scaffold();
     }
 
-    bool isOwner = displayedCalendar.calendarMemberController.getCalendarMember(widget._userController.getAuthenticatedUser().id)?.isOwner ?? false;
+    bool isOwner = displayedCalendar.calendarMemberController.getCalendarMember(widget.userController.getAuthenticatedUser().id)?.isOwner ?? false;
 
-    final saveLayoutButton = LoadingButton("Layout speichern", "Gespeichert", Colors.amber, _saveLayout);
-    final leaveCalendarButton = LoadingButton("Kalender verlassen", "Verlassen", Colors.red, _leaveCalendar);
+    final saveLayoutButton = LoadingButton(buttonText: "Layout speichern", successText: "Gespeichert", buttonColor: Colors.amber, callBack: _saveLayout);
+    final leaveCalendarButton = LoadingButton(buttonText: "Kalender verlassen", successText: "Verlassen", buttonColor: Colors.red, callBack: _leaveCalendar);
 
     return Scaffold(
       appBar: AppBar(
@@ -217,7 +214,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
                           flex: 2,
                           child: MaterialButton(
                             onPressed: () {
-                              PickerDialog.eventColorPickerDialog(_currentColor).then((selectedColor) {
+                              PickerDialog.eventColorPickerDialog(initialColor: _currentColor).then((selectedColor) {
                                 if (selectedColor != null) {
                                   setState(() {
                                     _currentColor = selectedColor;
@@ -376,7 +373,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
               ),
             ),
             title: Text(
-              member.userData.id == widget._userController.getAuthenticatedUser().id ? "Du" : member.userData.name,
+              member.userData.id == widget.userController.getAuthenticatedUser().id ? "Du" : member.userData.name,
               style: TextStyle(color: ThemeController.activeTheme().cardInfoColor, fontSize: 16),
             ),
             subtitle: Text(_getMemberStatusText(member.memberData), style: TextStyle(color: ThemeController.activeTheme().cardSmallInfoColor, fontSize: 14)),
@@ -490,7 +487,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
                     Divider(thickness: 2, color: ThemeController.activeTheme().headlineColor),
                   ListTile(
                     onTap: () async {
-                      int? color = await PickerDialog.eventColorPickerDialog(ThemeController.defaultEventColorIndex);
+                      int? color = await PickerDialog.eventColorPickerDialog(initialColor: ThemeController.defaultEventColorIndex);
                       if(color == null) {
                         return;
                       }
@@ -561,9 +558,9 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
           ],
         ),
         const SizedBox(height: 10),
-        LoadingButton("Einstellungen speichern", "Gespeichert", Colors.amber, _saveInformation),
+        LoadingButton(buttonText: "Einstellungen speichern", successText: "Gespeichert", buttonColor: Colors.amber, callBack: _saveInformation),
         const SizedBox(height: 20),
-        LoadingButton("Kalender löschen", "Gelöscht", Colors.red, _deleteCalendar),
+        LoadingButton(buttonText: "Kalender löschen", successText: "Gelöscht", buttonColor: Colors.red, callBack: _deleteCalendar),
         const SizedBox(height: 10),
       ],
     );
@@ -590,7 +587,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
             ),
             onPressed: () => _changePermissions(member.memberData),
           ),
-          member.userData.id == widget._userController.getAuthenticatedUser().id
+          member.userData.id == widget.userController.getAuthenticatedUser().id
               ? const Center()
               : IconButton(
                   visualDensity: VisualDensity.compact,
@@ -666,7 +663,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
     }
 
     ConfirmAction? answer = await StandardDialog.confirmDialog("${userData.name} aus diesem Kalender entfernen?",
-        "Nach dem Entfernen hat dieser Nutzer keinen Zugriff auf den Kalender mehr. Die Events welche von diesem Nutzer erstellt wurden bleiben jedoch erhalten.");
+        "Nach dem Entfernen hat dieser Nutzer keinen Zugriff auf den Kalender mehr. Die Termine welche von diesem Nutzer erstellt wurden bleiben jedoch erhalten.");
     if (answer != ConfirmAction.ok) {
       return;
     }
@@ -717,7 +714,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   }
 
   Future<bool> _saveLayout() async {
-    ResponseCode changeLayout = await widget._calendarController.changeCalendarLayout(widget._linkedCalendarID, _currentColor, _currentIcon);
+    ResponseCode changeLayout = await widget.calendarController.changeCalendarLayout(widget.linkedCalendarID, _currentColor, _currentIcon);
 
     if (changeLayout != ResponseCode.success) {
       String errorMessage;
@@ -741,7 +738,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   }
 
   Future<bool> _saveInformation() async {
-    ResponseCode changeInfo = await widget._calendarController.changeCalendarInformation(widget._linkedCalendarID, _name.text, _canJoin, _calendarPassword.text);
+    ResponseCode changeInfo = await widget.calendarController.changeCalendarInformation(widget.linkedCalendarID, _name.text, _canJoin, _colorLegend, _calendarPassword.text);
 
     if (changeInfo != ResponseCode.success) {
       String errorMessage;
@@ -770,7 +767,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
 
   Future<bool> _deleteCalendar() async {
     final answer = await StandardDialog.confirmDialog(
-        "Kalender löschen?", "Wenn du diesen Kalender löscht, kann er nicht wieder hergestellt werden! Alle Events werden unwiederruflich gelöscht. Willst du fortfahren?");
+        "Kalender löschen?", "Wenn du diesen Kalender löscht, kann er nicht wieder hergestellt werden! Alle Termine werden unwiderruflich gelöscht. Willst du fortfahren?");
     if (answer != ConfirmAction.ok) {
       return false;
     }
@@ -780,7 +777,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
       return false;
     }
 
-    ResponseCode deleteCalendar = await widget._calendarController.deleteCalendar(widget._linkedCalendarID, password);
+    ResponseCode deleteCalendar = await widget.calendarController.deleteCalendar(widget.linkedCalendarID, password);
 
     if (deleteCalendar != ResponseCode.success) {
       String errorMessage;
@@ -810,7 +807,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
 
   Future<bool> _leaveCalendar() async {
     final answer = await StandardDialog.confirmDialog(
-        "Kalender verlassen?", "Wenn du diesen Kalender verlässt, bleiben deine erstellten Events bestehen. Du wirst keinen Zugriff mehr auf den Kalender haben. Willst du fortfahren?");
+        "Kalender verlassen?", "Wenn du diesen Kalender verlässt, bleiben deine erstellten Termine bestehen. Du wirst keinen Zugriff mehr auf den Kalender haben. Willst du fortfahren?");
     if (answer != ConfirmAction.ok) {
       return false;
     }
@@ -820,7 +817,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
       return false;
     }
 
-    ResponseCode leaveCalendar = await widget._calendarController.leaveCalendar(widget._linkedCalendarID, password);
+    ResponseCode leaveCalendar = await widget.calendarController.leaveCalendar(widget.linkedCalendarID, password);
 
     if (leaveCalendar != ResponseCode.success) {
       String errorMessage;

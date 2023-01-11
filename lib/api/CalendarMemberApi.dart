@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:xitem/api/ApiGateway.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
@@ -69,7 +70,7 @@ class CalendarMemberApi extends ApiGateway{
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
@@ -84,7 +85,7 @@ class CalendarMemberApi extends ApiGateway{
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }

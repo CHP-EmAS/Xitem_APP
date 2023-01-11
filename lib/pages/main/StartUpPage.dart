@@ -24,6 +24,10 @@ class _StartUpPageState extends State<StartUpPage> {
   void connectWithApi() async {
     debugPrint("Starting up....");
 
+    for(int i = 0; i < ThemeController.eventColors.length; i++) {
+      debugPrint("$i : ${ThemeController.eventColors[i].value}");
+    }
+
     await StateController.getApiInfo().timeout(const Duration(seconds: 30), onTimeout: () {
       return ApiResponse(ResponseCode.timeout);
     }).then((apiInfoRequest) {

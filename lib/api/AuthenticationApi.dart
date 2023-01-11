@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:crypto/crypto.dart';
 import 'package:xitem/api/ApiGateway.dart';
@@ -12,7 +13,7 @@ class AuthenticationApi extends ApiGateway {
     String storedPassword = await SecureStorage.readVariable(SecureVariable.hashedPassword);
 
     if (storedPassword.isEmpty) {
-      print("stored password not found!");
+      debugPrint("Stored password not found!");
       return ResponseCode.unknown;
     }
 
@@ -45,7 +46,7 @@ class AuthenticationApi extends ApiGateway {
         }
       }
     } catch (error) {
-      print("local login: $error");
+      debugPrint("local login: $error");
     }
 
     return ApiResponse(ResponseCode.unknown);
@@ -61,13 +62,13 @@ class AuthenticationApi extends ApiGateway {
         if (response.headers.containsKey("auth-token")) {
           await SecureStorage.writeVariable(SecureVariable.authToken, response.headers["auth-token"].toString());
         } else {
-          print("Login-Error: No auth-token found");
+          debugPrint("Login-Error: No auth-token found");
         }
 
         if (response.headers.containsKey("refresh-token")) {
           await SecureStorage.writeVariable(SecureVariable.refreshToken, response.headers["refresh-token"].toString());
         } else {
-          print("Login-Error: No refresh-token found");
+          debugPrint("Login-Error: No refresh-token found");
         }
 
         var passwordBytes = utf8.encode(requestData.password);
@@ -98,7 +99,7 @@ class AuthenticationApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
@@ -113,7 +114,7 @@ class AuthenticationApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }

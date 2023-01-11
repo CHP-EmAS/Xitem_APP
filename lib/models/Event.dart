@@ -1,7 +1,4 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:xitem/models/Calendar.dart';
-import 'package:xitem/models/User.dart';
 
 class Event {
   Event(this.eventID, this.start, this.end, this.title, this.description, this.color, this.calendarID, this.userID, this.dayLong, this.creationDate);
@@ -38,7 +35,7 @@ class UiEvent {
 class EventData {
   EventData(this.selectedCalendar, this.title, this.startDate, this.endDate, this.daylong, this.color, this.description);
 
-  final String selectedCalendar;
+  final Calendar selectedCalendar;
 
   final String title;
   final DateTime startDate;

@@ -1,10 +1,14 @@
 import 'package:xitem/controllers/BirthdayController.dart';
 import 'package:xitem/controllers/CalendarController.dart';
+import 'package:xitem/controllers/EventController.dart';
 import 'package:xitem/controllers/HolidayController.dart';
+import 'package:xitem/controllers/SettingController.dart';
 import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/controllers/UserController.dart';
 import 'package:xitem/models/Calendar.dart';
+import 'package:xitem/models/Event.dart';
+import 'package:xitem/pages/main/EventPage.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 import 'package:xitem/widgets/XitemCalendar.dart';
 import 'package:xitem/widgets/dialogs/CalendarDialog.dart';
@@ -12,13 +16,13 @@ import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 import 'package:flutter/material.dart';
 
 class CalendarPage extends StatefulWidget {
-  const CalendarPage(this._linkedCalendarID,  this._calendarController, this._userController, this._holidayController, this._birthdayController, {super.key});
+  const CalendarPage({super.key, required this.linkedCalendarID, required this.calendarController, required this.userController, required this.holidayController, required this.birthdayController});
 
-  final String _linkedCalendarID;
-  final CalendarController _calendarController;
-  final UserController _userController;
-  final HolidayController _holidayController;
-  final BirthdayController _birthdayController;
+  final String linkedCalendarID;
+  final CalendarController calendarController;
+  final UserController userController;
+  final HolidayController holidayController;
+  final BirthdayController birthdayController;
 
   @override
   State<StatefulWidget> createState() => _CalendarPageState();
@@ -36,15 +40,16 @@ class _CalendarPageState extends State<CalendarPage> with TickerProviderStateMix
     _CalendarMenuChoice(menuStatus: _CalendarMenuStatus.settings, title: 'Anpassen', icon: Icons.edit_calendar),
   ];
 
-  late List<_CalendarMenuChoice> _calendarMenuChoices;
+  late final List<_CalendarMenuChoice> _calendarMenuChoices;
 
   Calendar? _linkedCalendar;
+  XitemCalendarController xitemCalendarController = XitemCalendarController();
 
   @override
   void initState() {
     super.initState();
 
-    Calendar? loadedCalendar = widget._calendarController.getCalendar(widget._linkedCalendarID);
+    Calendar? loadedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
 
     if(loadedCalendar != null) {
       _linkedCalendar = loadedCalendar;
@@ -54,38 +59,31 @@ class _CalendarPageState extends State<CalendarPage> with TickerProviderStateMix
 
 
   Future<void> _selectMenuChoice(_CalendarMenuChoice choice) async {
-    Calendar? currentCalendar = _linkedCalendar;
-
-    if(currentCalendar == null) {
-      return;
-    }
-
     if (choice.menuStatus == _CalendarMenuStatus.settings) {
-      StateController.navigatorKey.currentState?.pushNamed('/calendar/settings', arguments: widget._linkedCalendarID).then((_) {
-        Calendar? reloadedCalendar = widget._calendarController.getCalendar(widget._linkedCalendarID);
+      StateController.navigatorKey.currentState?.pushNamed('/calendar/settings', arguments: widget.linkedCalendarID).then((_) {
+        Calendar? reloadedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
 
         if(reloadedCalendar == null) {
           Navigator.pushNamedAndRemoveUntil(context, "/home", (route) => false);
           return;
         }
-        debugPrint("reload calendar");
 
         setState(() {
           _linkedCalendar = reloadedCalendar;
         });
       });
     } else if (choice.menuStatus == _CalendarMenuStatus.notes) {
-      StateController.navigatorKey.currentState?.pushNamed('/calendar/notes', arguments: widget._linkedCalendarID);
+      StateController.navigatorKey.currentState?.pushNamed('/calendar/notes', arguments: widget.linkedCalendarID);
     } else if (choice.menuStatus == _CalendarMenuStatus.qrInvitation) {
       await createQRCode();
     }
   }
 
   Future<bool> createQRCode() async {
-    InvitationRequest? invitationData = await CalendarDialog.createQRCodePopup(widget._linkedCalendarID);
+    InvitationRequest? invitationData = await CalendarDialog.createQRCodePopup(widget.linkedCalendarID);
     if (invitationData == null) return false;
 
-    ApiResponse<String> getInvitationToken = await  widget._calendarController.getInvitationToken(widget._linkedCalendarID,invitationData.canCreateEvents, invitationData.canEditEvents, invitationData.duration);
+    ApiResponse<String> getInvitationToken = await  widget.calendarController.getInvitationToken(widget.linkedCalendarID,invitationData.canCreateEvents, invitationData.canEditEvents, invitationData.duration);
     String? strInvitationToken = getInvitationToken.value;
     if (getInvitationToken.code != ResponseCode.success || strInvitationToken == null) {
       String errorMessage;
@@ -118,87 +116,98 @@ class _CalendarPageState extends State<CalendarPage> with TickerProviderStateMix
     return true;
   }
 
-  // void _addEvent(EventData newEvent) async {
-  //   Calendar selectedCalendar = UserController.calendarList[newEvent.selectedCalendar];
-  //
-  //   if (selectedCalendar == null) {
-  //     DialogPopup.okDialog("Event konnten nicht erstellt werden!", "Der Ausgewählte Kalender konnte nicht gefunden werden!");
-  //     return;
-  //   }
-  //
-  //   DialogPopup.asyncLoadingDialog(_keyLoader, "Erstelle Event...");
-  //
-  //   bool success = await selectedCalendar.createEvent(newEvent).catchError((e) {
-  //     Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //     return false;
-  //   });
-  //
-  //   await Future.delayed(const Duration(seconds: 1));
-  //
-  //   if (!success) {
-  //     Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //     DialogPopup.okDialog("Event konnten nicht erstellt werden!", ApiGateway.errorMessage);
-  //   } else {
-  //     if (selectedCalendar.id == widget.linkedCalendar.id) {
-  //       await _rebuildOnSpecificDate(newEvent.startDate);
-  //     }
-  //
-  //     Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //   }
-  // }
-  //
-  // void _editEvent(BigInt eventID) async {
-  //   EventData editedEvent = await EventPopup.showEventSettingDialog(widget.linkedCalendar.id, eventID: eventID);
-  //
-  //   if (editedEvent != null) {
-  //     DialogPopup.asyncLoadingDialog(_keyLoader, "Speichere Änderungen...");
-  //
-  //     bool success = await widget.linkedCalendar.editEvent(eventID, editedEvent.startDate, editedEvent.endDate, editedEvent.title, editedEvent.description, editedEvent.daylong, editedEvent.color).catchError((e) {
-  //       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //       return false;
-  //     });
-  //
-  //     await Future.delayed(const Duration(seconds: 1));
-  //
-  //     if (!success) {
-  //       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //       DialogPopup.okDialog("Änderungen konnten nicht gespeichert werden!", ApiGateway.errorMessage);
-  //     } else {
-  //       await _rebuildOnSpecificDate(editedEvent.startDate);
-  //       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //     }
-  //   }
-  // }
-  //
-  // void _deleteEvent(BigInt eventID) async {
-  //   if (await DialogPopup.confirmDialog("Event löschen?", "Willst du das Event wirklich löschen? Das Event wird endgültig gelöscht und kann nicht wiederhergestellt werden!") ==
-  //       ConfirmAction.OK) {
-  //     DialogPopup.asyncLoadingDialog(_keyLoader, "Lösche Event...");
-  //
-  //     bool success = await widget.linkedCalendar.removeEvent(eventID).catchError((e) {
-  //       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //       return false;
-  //     });
-  //
-  //     await Future.delayed(const Duration(seconds: 1));
-  //
-  //     if (!success) {
-  //       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //       DialogPopup.okDialog("Event konnten nicht gelöscht werden!", ApiGateway.errorMessage);
-  //     } else {
-  //       await _rebuildOnSpecificDate(_calendarController.selectedDay);
-  //       Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
-  //     }
-  //   }
-  // }
+  Future<void> _onCreateEvent(DateTime initialDay) async {
+    Calendar? currentCalendar = _linkedCalendar;
+
+    if(currentCalendar == null) {
+      return;
+    }
+
+    await StateController.navigatorKey.currentState?.pushNamed(
+        "/event",
+        arguments: EventPageArguments(initialCalendar: currentCalendar, calendarList: [], calendarChangeable: false, initialStartDate: initialDay)
+    );
+  }
+
+  Future<void> _onEditEvent(UiEvent eventToEdit) async {
+    Calendar? currentCalendar = _linkedCalendar;
+    if(currentCalendar == null) {
+      return;
+    }
+
+    await StateController.navigatorKey.currentState?.pushNamed(
+        "/event",
+        arguments: EventPageArguments(initialCalendar: currentCalendar, calendarList: [], calendarChangeable: false, eventToEdit: eventToEdit.event)
+    );
+  }
+
+  Future<void> _onDeleteEvent(UiEvent eventToDelete) async {
+    EventController? eventController = widget.calendarController.getCalendar(eventToDelete.calendar.id)?.eventController;
+    if (eventController == null) {
+      return;
+    }
+
+    ConfirmAction? confirm = await StandardDialog.confirmDialog("Event löschen?", "Willst du das Event wirklich löschen? Das Event wird endgültig gelöscht und kann nicht wiederhergestellt werden!");
+    if (confirm != ConfirmAction.ok) {
+      return;
+    }
+
+    StandardDialog.loadingDialog("Lösche Event...");
+
+    ResponseCode deleteEvent = await eventController.removeEvent(eventToDelete.event.eventID).catchError((e) {
+      StateController.navigatorKey.currentState?.pop();
+      return ResponseCode.unknown;
+    });
+
+    if (deleteEvent != ResponseCode.success) {
+      String errorMessage;
+
+      switch (deleteEvent) {
+        case ResponseCode.accessForbidden:
+        case ResponseCode.insufficientPermissions:
+          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu löschen. Bitte wende dich an den Kalenderadministrator";
+          break;
+        default:
+          errorMessage = "Beim Löschen des Events ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
+      }
+
+      StateController.navigatorKey.currentState?.pop();
+      StandardDialog.okDialog("Event konnte nicht gelöscht werden!", errorMessage);
+      return;
+    }
+
+    StateController.navigatorKey.currentState?.pop();
+  }
 
   @override
   Widget build(BuildContext context) {
     Calendar? displayedCalendar = _linkedCalendar;
 
     if(displayedCalendar == null) {
-      return const Scaffold();
+      return Scaffold(
+        appBar: AppBar(
+          leading: BackButton(
+            color: ThemeController.activeTheme().iconColor,
+            onPressed: () {
+              StateController.navigatorKey.currentState?.pop(context);
+            },
+          ),
+        )
+      );
     }
+
+    Widget xitemCalendar = XitemCalendar(
+      calendar: displayedCalendar,
+      userController: widget.userController,
+      holidayController: widget.holidayController,
+      birthdayController: widget.birthdayController,
+      xitemCalendarController: xitemCalendarController,
+      initialDate: DateTime.now(),
+      onDayLongTap: _onCreateEvent,
+      onShareEvent: (uiEvent) async { },
+      onDeleteEvent: _onDeleteEvent,
+      onEditEvent: _onEditEvent,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -258,26 +267,14 @@ class _CalendarPageState extends State<CalendarPage> with TickerProviderStateMix
         ],
       ),
       backgroundColor: ThemeController.activeTheme().backgroundColor,
-      body: XitemCalendar(
-        displayedCalendar,
-        widget._userController,
-        widget._holidayController,
-        widget._birthdayController,
-        onDayLongTap: (day) {  },
-        onShareEvent: (uiEvent) {  },
-        onDeleteEvent: (uiEvent) {  },
-        onEditEvent: (uiEvent) {  },
-      ),
+      body: xitemCalendar,
       floatingActionButton: (displayedCalendar.calendarMemberController.getAppUserCreatePermission())
           ? FloatingActionButton(
-              onPressed: () async {
-                //EventData newEvent = await EventDialog.showEventSettingDialog(widget.linkedCalendar.id, initTime: _calendarController.selectedDay, calendarChangeable: true);
-                //if (newEvent != null) {
-                //  _addEvent(newEvent);
-                //}
-              },
+              onPressed: () => _onCreateEvent(xitemCalendarController.selectedDay()).then((value) => setState(() {
+                xitemCalendarController.rebuildSelectedEventsListOnDay(xitemCalendarController.selectedDay());
+              })),
               backgroundColor: ThemeController.activeTheme().actionButtonColor,
-              tooltip: "Event erstellen",
+              tooltip: "Termin erstellen",
               child: Icon(
                 Icons.add,
                 color: ThemeController.activeTheme().textColor,

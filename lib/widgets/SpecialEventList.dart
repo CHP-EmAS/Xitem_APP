@@ -1,5 +1,4 @@
 import 'dart:core';
-import 'package:xitem/controllers/BirthdayController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/models/SpecialEvent.dart';
 import 'package:flutter/material.dart';

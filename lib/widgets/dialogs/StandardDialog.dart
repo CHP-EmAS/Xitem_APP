@@ -50,17 +50,16 @@ class StandardDialog {
           content: Text(content),
           elevation: 3,
           actions: <Widget>[
-            // usually buttons at the bottom of the dialog
-            TextButton(
-              child: Text("OK", style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18)),
-              onPressed: () {
-                Navigator.pop(context, ConfirmAction.ok);
-              },
-            ),
             TextButton(
               child: Text("Abbrechen", style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18)),
               onPressed: () {
                 Navigator.pop(context, ConfirmAction.cancel);
+              },
+            ),
+            TextButton(
+              child: Text("OK", style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18)),
+              onPressed: () {
+                Navigator.pop(context, ConfirmAction.ok);
               },
             ),
           ],
@@ -124,22 +123,22 @@ class StandardDialog {
             actions: <Widget>[
               TextButton(
                 child: Text(
-                  'Ok',
+                  'Abbrechen',
+                  style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              TextButton(
+                child: Text(
+                  'Ausführen',
                   style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18),
                 ),
                 onPressed: () {
                   final password = textFieldController.text;
                   textFieldController.clear();
                   Navigator.pop(context, password);
-                },
-              ),
-              TextButton(
-                child: Text(
-                  'Abbrechen',
-                  style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
                 },
               ),
             ],
@@ -172,6 +171,15 @@ class StandardDialog {
             actions: <Widget>[
               TextButton(
                 child: Text(
+                  'Abbrechen',
+                  style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              TextButton(
+                child: Text(
                   'Ok',
                   style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18),
                 ),
@@ -179,15 +187,6 @@ class StandardDialog {
                   final password = textFieldController.text;
                   textFieldController.clear();
                   Navigator.pop(context, password);
-                },
-              ),
-              TextButton(
-                child: Text(
-                  'Abbrechen',
-                  style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
                 },
               ),
             ],

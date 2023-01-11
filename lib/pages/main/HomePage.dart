@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:xitem/controllers/BirthdayController.dart';
 import 'package:xitem/controllers/CalendarController.dart';
 import 'package:xitem/controllers/EventController.dart';
@@ -9,26 +10,25 @@ import 'package:xitem/main.dart';
 import 'package:xitem/models/Calendar.dart';
 import 'package:xitem/models/Event.dart';
 import 'package:xitem/models/SpecialEvent.dart';
+import 'package:xitem/pages/main/EventPage.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 import 'package:xitem/utils/AvatarImageProvider.dart';
 import 'package:xitem/utils/EventListBuilder.dart';
 import 'package:xitem/utils/StateCodeConverter.dart';
 import 'package:xitem/widgets/CalendarList.dart';
-import 'package:flutter/material.dart';
 import 'package:xitem/widgets/SpecialEventList.dart';
 import 'package:xitem/widgets/UpcomingEventList.dart';
 import 'package:xitem/widgets/dialogs/BirthdayDialog.dart';
-import 'package:xitem/widgets/dialogs/EventDialog.dart';
 import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage(this._initialSubPage, this._userController, this._calendarController, this._holidayController, this._birthdayController, {super.key});
+  const HomePage({super.key, required this.initialSubPage, required this.userController, required this.calendarController, required this.holidayController, required this.birthdayController});
 
-  final HomeSubPage _initialSubPage;
-  final UserController _userController;
-  final CalendarController _calendarController;
-  final HolidayController _holidayController;
-  final BirthdayController _birthdayController;
+  final HomeSubPage initialSubPage;
+  final UserController userController;
+  final CalendarController calendarController;
+  final HolidayController holidayController;
+  final BirthdayController birthdayController;
 
   @override
   State<StatefulWidget> createState() => _HomePageState();
@@ -75,41 +75,38 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _eventListBuilder = EventListBuilder(widget._calendarController);
+    _eventListBuilder = EventListBuilder(widget.calendarController);
     _eventListBuilder.generateEventList();
 
-    _selectedSubPage = widget._initialSubPage;
+    _selectedSubPage = widget.initialSubPage;
   }
 
   Widget buildBody() {
     switch (_selectedSubPage) {
       case HomeSubPage.events:
         return UpcomingEventList(
-            widget._calendarController,
-            _eventListBuilder.getGeneratedEventList(),
-            widget._userController.getAuthenticatedUser(),
-            _onCalendarIconTapped,
-                (p0) { },
-            _onEditEvent,
-            _onDeleteEvent
+          calendarController: widget.calendarController,
+          userController: widget.userController,
+          eventEntryList: _eventListBuilder.getGeneratedEventList(),
+          appUser: widget.userController.getAuthenticatedUser(),
+          onCalendarIconTapped: _onCalendarIconTapped,
+          onEventTapped: (p0) {},
+          onEventSharedTapped: (p0) {},
+          onEventEditTapped: _onEditEvent,
+          onEventDeleteTapped: _onDeleteEvent,
         );
       case HomeSubPage.calendars:
         List<UiCalendarCard> calendarCards = [];
 
-        widget._calendarController.getCalendarMap().values.forEach((calendar) {
-          calendarCards.add(
-              UiCalendarCard(
-                  calendar,
-                  _eventListBuilder.generateCalendarEventHeadline(calendar)
-              )
-          );
+        widget.calendarController.getCalendarMap().values.forEach((calendar) {
+          calendarCards.add(UiCalendarCard(calendar, _eventListBuilder.generateCalendarEventHeadline(calendar)));
         });
 
-        return CalendarList(calendarCards, _onCalendarIconTapped);
+        return CalendarList(calendarList: calendarCards, onCalendarCardTap: _onCalendarIconTapped);
       case HomeSubPage.holidays:
         return SpecialEventList(
-          birthdayList: widget._birthdayController.birthdays(),
-          holidayList: widget._holidayController.upcomingHolidays(),
+          birthdayList: widget.birthdayController.birthdays(),
+          holidayList: widget.holidayController.upcomingHolidays(),
           currentLoadedStateName: StateCodeConverter.getStateName(Xitem.settingController.getHolidayStateCode()),
           onDeleteLocalBirthday: onDeleteLocalBirthday,
         );
@@ -129,7 +126,7 @@ class _HomePageState extends State<HomePage> {
         leading: Container(
           padding: const EdgeInsets.all(7),
           child: CircleAvatar(
-            backgroundImage: AvatarImageProvider.get(widget._userController.getAuthenticatedUser().avatar),
+            backgroundImage: AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
           ),
         ),
         title: Text(
@@ -195,15 +192,15 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-              onPressed: _onActionButtonPressed,
-              backgroundColor: ThemeController.activeTheme().actionButtonColor,
-              tooltip: _navigationOptions.elementAt(_selectedSubPage.index).actionHintText,
-              child: Icon(
-                _navigationOptions.elementAt(_selectedSubPage.index).actionIcon,
-                color: ThemeController.activeTheme().textColor,
-                size: 30,
-              ),
-            ),
+        onPressed: _onActionButtonPressed,
+        backgroundColor: ThemeController.activeTheme().actionButtonColor,
+        tooltip: _navigationOptions.elementAt(_selectedSubPage.index).actionHintText,
+        child: Icon(
+          _navigationOptions.elementAt(_selectedSubPage.index).actionIcon,
+          color: ThemeController.activeTheme().textColor,
+          size: 30,
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
@@ -212,10 +209,17 @@ class _HomePageState extends State<HomePage> {
     if (_navigationOptions.elementAt(_selectedSubPage.index).menuStatus == HomeSubPage.calendars) {
       StateController.navigatorKey.currentState?.pushNamed('/createCalendar').then((value) => setState(() => {}));
     } else if (_navigationOptions.elementAt(_selectedSubPage.index).menuStatus == HomeSubPage.events) {
-      Map<String, Calendar> calendars = widget._calendarController.getCalendarMap();
+      Map<String, Calendar> calendars = widget.calendarController.getCalendarMap();
 
       if (calendars.isNotEmpty) {
-        _onCreateEvent(calendars.values.toList());
+        StateController.navigatorKey.currentState?.pushNamed(
+          "/event",
+          arguments: EventPageArguments(initialCalendar: calendars.values.first, calendarList: calendars.values.toList(), calendarChangeable: true, initialStartDate: DateTime.now())
+        ).then((value) => {
+          setState(() {
+            _eventListBuilder.generateEventList();
+          })
+        });
       } else {
         StateController.navigatorKey.currentState?.pushNamed('/createCalendar').then((value) => setState(() => {}));
       }
@@ -233,7 +237,7 @@ class _HomePageState extends State<HomePage> {
   void _onHomeMenuChoiceTapped(_MenuChoice choice) {
     if (choice.menuStatus == _AppMenuStatus.logout) {
       StateController.safeLogout().then((responseCode) {
-        if(responseCode == ResponseCode.success) {
+        if (responseCode == ResponseCode.success) {
           StateController.navigatorKey.currentState?.pushNamedAndRemoveUntil('/startup', (Route<dynamic> route) => false);
         }
       });
@@ -246,143 +250,33 @@ class _HomePageState extends State<HomePage> {
 
   void _onCalendarIconTapped(String selectedCalendar) {
     StateController.navigatorKey.currentState?.pushNamed("/calendar", arguments: selectedCalendar).then((value) => setState(() {
-      _eventListBuilder.generateEventList();
-    }));
-  }
-
-  void _onCreateEvent(List<Calendar> calendars) async {
-    EventData? newEvent = await EventDialog.showEventSettingDialog(
-      calendars.first,
-      calendars,
-      calendarChangeable: true,
-      initTime: DateTime.now(),
-    );
-
-    if (newEvent == null) {
-      return;
-    }
-
-    EventController? eventController = widget._calendarController.getCalendar(newEvent.selectedCalendar)?.eventController;
-
-    if (eventController == null) {
-      StandardDialog.okDialog("Event konnten nicht erstellt werden!", "Der Ausgewählte Kalender konnte nicht gefunden werden!");
-      return;
-    }
-
-    StandardDialog.loadingDialog("Erstelle Event...");
-
-    ResponseCode createEvent = await eventController.createEvent(newEvent).catchError((e) {
-      StateController.navigatorKey.currentState?.pop();
-      return ResponseCode.unknown;
-    });
-
-    if (createEvent != ResponseCode.success) {
-      StateController.navigatorKey.currentState?.pop();
-
-      String errorMessage;
-
-      switch(createEvent) {
-        case ResponseCode.missingArgument:
-          errorMessage = "Bitte füllen Sie alle Pflichtfelder aus.";
-          break;
-        case ResponseCode.invalidTitle:
-          errorMessage = "Unzulässiger Titel. Titel muss mindestens 3 Zeichen lang sein.";
-          break;
-        case ResponseCode.endBeforeStart:
-          errorMessage = "Das Enddatum muss nach dem Startdatum liegen.";
-          break;
-        case ResponseCode.startAfter1900:
-          errorMessage = "Das Startdatum muss nach dem 01.01.1900 liegen.";
-          break;
-        case ResponseCode.accessForbidden:
-        case ResponseCode.insufficientPermissions:
-          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
-          break;
-        case ResponseCode.invalidColor:
-          errorMessage = "Unzulässige Farbe.";
-          break;
-        default:
-          errorMessage = "Beim Erstellen des Events ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
-      }
-
-      StandardDialog.okDialog("Event konnte nicht erstellt werden!", errorMessage);
-      return;
-    }
-
-    _eventListBuilder.generateEventList();
-
-    setState(() {});
-
-    StateController.navigatorKey.currentState?.pop();
+          _eventListBuilder.generateEventList();
+        }));
   }
 
   void _onEditEvent(UiEvent eventToEdit) async {
-    Calendar? calendar = widget._calendarController.getCalendar(eventToEdit.calendar.id);
-    EventController? eventController = widget._calendarController.getCalendar(eventToEdit.calendar.id)?.eventController;
+    Calendar? calendar = widget.calendarController.getCalendar(eventToEdit.calendar.id);
+    EventController? eventController = widget.calendarController.getCalendar(eventToEdit.calendar.id)?.eventController;
     if (calendar == null || eventController == null) {
       return;
     }
 
     Event? event = eventController.getEvent(eventToEdit.event.eventID);
-    if(event == null) {
+    if (event == null) {
       return;
     }
 
-    List<Calendar> calendarList = widget._calendarController.getCalendarMap().values.toList();
-    EventData? editedEvent = await EventDialog.showEventSettingDialog(calendar, calendarList, event: event);
-    if (editedEvent == null) {
-      return;
-    }
-
-    StandardDialog.loadingDialog("Speichere Änderungen...");
-
-    ResponseCode editEvent = await eventController.editEvent(eventToEdit.event.eventID, editedEvent.startDate, editedEvent.endDate, editedEvent.title, editedEvent.description, editedEvent.daylong, editedEvent.color).catchError((e) {
-      StateController.navigatorKey.currentState?.pop();
-      return ResponseCode.unknown;
-    });
-
-    if(editEvent != ResponseCode.success) {
-      String errorMessage;
-
-      switch(editEvent) {
-        case ResponseCode.accessForbidden:
-        case ResponseCode.insufficientPermissions:
-          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
-          break;
-        case ResponseCode.eventNotFound:
-          errorMessage = "Event konnte nicht gefunden werden.";
-          break;
-        case ResponseCode.invalidColor:
-          errorMessage = "Unzulässige Farbe.";
-          break;
-        case ResponseCode.invalidTitle:
-          errorMessage = "Unzulässiger Titel. Titel muss mindestens 3 Zeichen lang sein.";
-          break;
-        case ResponseCode.startAfter1900:
-          errorMessage = "Das Startdatum muss nach dem 01.01.1900 liegen.";
-          break;
-        case ResponseCode.endBeforeStart:
-          errorMessage = "Das Enddatum muss nach dem Startdatum liegen.";
-          break;
-        default:
-          errorMessage = "Die Änderungen konnten nicht gespeichert werden werden, versuch es später erneut.";
-      }
-
-      StandardDialog.okDialog("Änderungen konnten nicht gespeichert werden!", errorMessage);
-      return;
-    }
-
-   _eventListBuilder.generateEventList();
-
-    setState(() {
-      _eventListBuilder.generateEventList();
-    });
-
-    StateController.navigatorKey.currentState?.pop();
+    List<Calendar> calendarList = widget.calendarController.getCalendarMap().values.toList();
+    StateController.navigatorKey.currentState?.pushNamed("/event", arguments: EventPageArguments(initialCalendar: calendar, calendarList: calendarList, eventToEdit: event))
+        .then((value) => {
+          setState(() {
+            _eventListBuilder.generateEventList();
+          })
+        });
   }
 
   void _onDeleteEvent(UiEvent eventToDelete) async {
-    EventController? eventController = widget._calendarController.getCalendar(eventToDelete.calendar.id)?.eventController;
+    EventController? eventController = widget.calendarController.getCalendar(eventToDelete.calendar.id)?.eventController;
     if (eventController == null) {
       return;
     }
@@ -400,10 +294,10 @@ class _HomePageState extends State<HomePage> {
       return ResponseCode.unknown;
     });
 
-    if(deleteEvent != ResponseCode.success) {
+    if (deleteEvent != ResponseCode.success) {
       String errorMessage;
 
-      switch(deleteEvent) {
+      switch (deleteEvent) {
         case ResponseCode.accessForbidden:
         case ResponseCode.insufficientPermissions:
           errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu löschen. Bitte wende dich an den Kalenderadministrator";
@@ -417,8 +311,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    _eventListBuilder.generateEventList();
-
     setState(() {
       _eventListBuilder.generateEventList();
     });
@@ -430,9 +322,12 @@ class _HomePageState extends State<HomePage> {
     LocalBirthday? newBirthday = await BirthdayDialog.showBirthdayDialog();
 
     StandardDialog.loadingDialog("Füge Geburtstag hinzu...");
-    if(newBirthday != null) {
-      await widget._birthdayController.addBirthdayToLocalStorage(newBirthday);
+
+    if (newBirthday != null) {
+      await widget.birthdayController.addBirthdayToLocalStorage(newBirthday);
+      setState(() {});
     }
+
     StateController.navigatorKey.currentState?.pop();
   }
 
@@ -440,8 +335,8 @@ class _HomePageState extends State<HomePage> {
     ConfirmAction? deleteBirthday = await StandardDialog.confirmDialog("Geburtstag entfernen", "Willst du den Geburtstag von ${birthday.name} aus der Liste entfernen?");
     String? uuid = birthday.localID;
 
-    if(deleteBirthday == ConfirmAction.ok && uuid != null) {
-      await widget._birthdayController.removeBirthdayFromLocalStorage(uuid);
+    if (deleteBirthday == ConfirmAction.ok && uuid != null) {
+      await widget.birthdayController.removeBirthdayFromLocalStorage(uuid);
       setState(() {});
     }
   }
@@ -469,5 +364,5 @@ class _MenuChoice {
 }
 
 enum _AppMenuStatus { logout, settings, profile }
-enum HomeSubPage { calendars, events, holidays }
 
+enum HomeSubPage { calendars, events, holidays }

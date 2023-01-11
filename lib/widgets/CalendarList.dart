@@ -5,18 +5,18 @@ import 'package:flutter/material.dart';
 
 class CalendarList extends StatelessWidget {
 
-  final List<UiCalendarCard> _calendarList;
-  final void Function(String) _onCalendarCardTap;
+  final List<UiCalendarCard> calendarList;
+  final void Function(String) onCalendarCardTap;
 
-  const CalendarList(this._calendarList, this._onCalendarCardTap, {super.key});
+  const CalendarList({super.key, required this.calendarList, required this.onCalendarCardTap});
 
   @override
   Widget build(BuildContext context) {
     return ScrollConfiguration(
       behavior: const CustomScrollBehavior(false, true),
-      child: _calendarList.isNotEmpty
+      child: calendarList.isNotEmpty
           ? ListView.builder(
-              itemCount: _calendarList.length,
+              itemCount: calendarList.length,
               itemBuilder: _buildItemsForListView,
             )
           : Center(
@@ -37,11 +37,11 @@ class CalendarList extends StatelessWidget {
 
     if (index == 0) {
       marginTop = 10.0;
-    } else if (index == _calendarList.length - 1) {
+    } else if (index == calendarList.length - 1) {
       marginBot = 10.0;
     }
 
-    UiCalendarCard calendarCard = _calendarList[index];
+    UiCalendarCard calendarCard = calendarList[index];
 
     return Card(
       elevation: 5,
@@ -59,7 +59,7 @@ class CalendarList extends StatelessWidget {
         ),
         subtitle: Text(calendarCard.upcomingEventsNews, style: TextStyle(color: ThemeController.activeTheme().cardSmallInfoColor)),
         trailing: Icon(Icons.keyboard_arrow_right, size: 35, color: ThemeController.activeTheme().cardSmallInfoColor),
-        onTap: () => _onCalendarCardTap(calendarCard.calendar.id),
+        onTap: () => onCalendarCardTap(calendarCard.calendar.id),
       ),
     );
   }

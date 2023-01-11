@@ -1,41 +1,54 @@
 import 'package:xitem/controllers/CalendarController.dart';
-import 'package:xitem/controllers/CalendarMemberController.dart';
+import 'package:xitem/controllers/UserController.dart';
 import 'package:xitem/models/Event.dart';
 import 'package:xitem/models/User.dart';
 import 'package:xitem/utils/EventListBuilder.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/utils/CustomScrollBehavior.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:xitem/widgets/SlidableEventCard.dart';
+import 'package:xitem/widgets/dialogs/EventDialog.dart';
 
 class UpcomingEventList extends StatelessWidget {
-  final CalendarController _calendarController;
+  final CalendarController calendarController;
+  final UserController userController;
 
-  final List<EventListEntry> _eventEntryList;
-  final AuthenticatedUser _appUser;
+  final List<EventListEntry> eventEntryList;
+  final AuthenticatedUser appUser;
 
-  final void Function(String) _onCalendarIconTapped;
-  final void Function(UiEvent) _onEventTapped;
-  final void Function(UiEvent) _onEventEditTapped;
-  final void Function(UiEvent) _onEventDeleteTapped;
+  final void Function(String) onCalendarIconTapped;
+  final void Function(UiEvent) onEventTapped;
+  final void Function(UiEvent) onEventSharedTapped;
+  final void Function(UiEvent) onEventEditTapped;
+  final void Function(UiEvent) onEventDeleteTapped;
 
-  const UpcomingEventList(this._calendarController, this._eventEntryList, this._appUser, this._onCalendarIconTapped, this._onEventTapped, this._onEventEditTapped, this._onEventDeleteTapped, {super.key});
+  const UpcomingEventList({
+    super.key,
+    required this.calendarController,
+    required this.userController,
+    required this.eventEntryList,
+    required this.appUser,
+    required this.onCalendarIconTapped,
+    required this.onEventTapped,
+    required this.onEventSharedTapped,
+    required this.onEventEditTapped,
+    required this.onEventDeleteTapped
+  });
 
   @override
   Widget build(BuildContext context) {
     return ScrollConfiguration(
       behavior: const CustomScrollBehavior(false, true),
-      child: _eventEntryList.isNotEmpty
+      child: eventEntryList.isNotEmpty
           ? ListView.builder(
-              itemCount: _eventEntryList.length,
+              itemCount: eventEntryList.length,
               itemBuilder: _buildItemsForListView,
             )
           : Center(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                 child: Text(
-                  _calendarController.getCalendarMap().isEmpty
+                  calendarController.getCalendarMap().isEmpty
                       ? "Herzlich Willkommen bei Xitem! ♥\n\n Drücke '+' unten Links um deinen ersten Kalender zu erstellen oder einem bestehenden Kalender beizutreten."
                       : "Keine anstehenden Termine in den nächsten Monaten.\nDrücke '+' unten Links um ein neuen Termin zu erstellen.",
                   textAlign: TextAlign.center,
@@ -46,7 +59,7 @@ class UpcomingEventList extends StatelessWidget {
   }
 
   Widget _buildItemsForListView(BuildContext context, int index) {
-    EventListEntry currentEntry = _eventEntryList[index];
+    EventListEntry currentEntry = eventEntryList[index];
 
     if (currentEntry.entryType == EventListEntryType.headline) {
       return Padding(
@@ -74,12 +87,9 @@ class UpcomingEventList extends StatelessWidget {
   }
 
   Widget _buildEvent(UiEvent uiEvent) {
-    bool canEditThisEvent = uiEvent.calendar.calendarMemberController
-        .getCalendarMember(_appUser.id)
-        ?.canEditEvents ?? false;
-
+    bool canEditThisEvent = uiEvent.calendar.calendarMemberController.getCalendarMember(appUser.id)?.canEditEvents ?? false;
     if (!canEditThisEvent) {
-      if (_appUser.id == uiEvent.event.userID) {
+      if (appUser.id == uiEvent.event.userID) {
         canEditThisEvent = true;
       }
     }
@@ -95,6 +105,8 @@ class UpcomingEventList extends StatelessWidget {
       subTitle = "${uiEvent.firstLine}\n${uiEvent.secondLine}";
     }
 
+    User? creator = userController.getLoadedUser(uiEvent.event.userID);
+
     tile = ListTile(
       focusColor: Colors.red,
       visualDensity: VisualDensity.compact,
@@ -107,12 +119,14 @@ class UpcomingEventList extends StatelessWidget {
           size: 35,
           color: ThemeController.getEventColor(uiEvent.calendar.color),
         ),
-        onPressed: () => _onCalendarIconTapped(uiEvent.calendar.id),
+        onPressed: () => onCalendarIconTapped(uiEvent.calendar.id),
       ),
       title: Text(uiEvent.headline),
       subtitle: Text(subTitle),
       isThreeLine: (uiEvent.firstLine == "" || uiEvent.secondLine == "") ? false : true,
-      onTap: () => _onEventTapped(uiEvent),
+      onTap: () {
+        EventDialog.showEventInformation(uiEvent.event, uiEvent.calendar, creator);
+      },
     );
 
     return SlidableEventCard(
@@ -120,8 +134,8 @@ class UpcomingEventList extends StatelessWidget {
         editable: canEditThisEvent,
         content: tile,
         onEventShareTapped: () => {},
-        onEventEditTapped: () => _onEventEditTapped(uiEvent),
-        onEventDeleteTapped: () => _onEventDeleteTapped(uiEvent)
+        onEventEditTapped: () => onEventEditTapped(uiEvent),
+        onEventDeleteTapped: () => onEventDeleteTapped(uiEvent)
     );
   }
 }

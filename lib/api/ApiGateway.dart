@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
@@ -28,15 +29,15 @@ class ApiGateway {
 
       String apiInfo= "";
 
-      if (data.containsKey("API_Name")) {
-        apiInfo = data["API_Name"];
+      if (data.containsKey("API_NAME")) {
+        apiInfo = data["API_NAME"];
       }
 
-      if (data.containsKey("Version")) {
-        apiInfo += " ${data["Version"]}";
+      if (data.containsKey("API_VERSION")) {
+        apiInfo += " ${data["API_VERSION"]}";
       }
 
-      print("Connected with: $apiInfo");
+      debugPrint("Connected with: $apiInfo");
 
       return ApiResponse(ResponseCode.success, apiInfo);
     }
@@ -51,7 +52,7 @@ class ApiGateway {
     try {
       responseData = jsonDecode(response.body);
     } catch (error) {
-      print("Error while decode response message!\n$error");
+      debugPrint("Error while decode response message!\n$error");
       return ResponseCode.unknown;
     }
 
@@ -65,7 +66,7 @@ class ApiGateway {
   Future<Response> sendRequest(String relativeURL, RequestType type,
       [ApiRequestData? requestData, Map<String, String>? optionalHeaders, bool includeAuthToken = false, bool includeSecurityToken = false]) async {
     //log request
-    print("[$type] > $relativeURL");
+    debugPrint("[$type] > $relativeURL");
 
     String body = requestData != null ? jsonEncode(requestData.toJson()) : "";
     Map<String, String> headers = await _buildHeader(includeAuthToken, includeSecurityToken, optionalHeaders);
@@ -155,7 +156,7 @@ class ApiGateway {
     if (errorCode == ResponseCode.tokenExpired) {
       return true;
     } else if (errorCode == ResponseCode.tokenRequired) {
-      print("Error: Token required! Request: ${response.request?.url}");
+      debugPrint("Error: Token required! Request: ${response.request?.url}");
     } else {
       //If the user can no longer be authenticated,
       //he is logged out with an appropriate error message.
@@ -182,13 +183,13 @@ class ApiGateway {
   }
 
   Future<bool> _refreshToken() async {
-    print("Refreshing Auth-Token..");
+    debugPrint("Refreshing Auth-Token..");
 
     String authToken = await SecureStorage.readVariable(SecureVariable.authToken);
     String refreshToken = await SecureStorage.readVariable(SecureVariable.refreshToken);
 
     if (authToken.isEmpty || refreshToken.isEmpty) {
-      print("Refresh-Error: authToken or refreshToken not found!");
+      debugPrint("Refresh-Error: authToken or refreshToken not found!");
       return false;
     }
 
@@ -201,7 +202,7 @@ class ApiGateway {
       if (response.statusCode == 200) {
         if (response.headers.containsKey("auth-token")) {
           await SecureStorage.writeVariable(SecureVariable.authToken, response.headers["auth-token"] as String);
-          print("Auth-Token refreshed!");
+          debugPrint("Auth-Token refreshed!");
           return true;
         }
       }
@@ -213,13 +214,13 @@ class ApiGateway {
   }
 
   Future<String> _getSecurityToken() async {
-    print("Requesting Security-Token..");
+    debugPrint("Requesting Security-Token..");
 
     String authToken = await SecureStorage.readVariable(SecureVariable.authToken);
     String refreshToken = await SecureStorage.readVariable(SecureVariable.refreshToken);
 
     if (authToken.isEmpty || refreshToken.isEmpty) {
-      print("Request-Security-Error: authToken or refreshToken not found!");
+      debugPrint("Request-Security-Error: authToken or refreshToken not found!");
       return "";
     }
 
@@ -233,14 +234,14 @@ class ApiGateway {
 
       if (response.statusCode == 200) {
         if (response.headers.containsKey("security-token")) {
-          print("Security-Token received!");
+          debugPrint("Security-Token received!");
           return response.headers["security-token"] as String;
         }
       }
 
       return "";
     } catch (error) {
-      print("Security token cannot be requested:\n$error");
+      debugPrint("Security token cannot be requested:\n$error");
       return "";
     }
   }

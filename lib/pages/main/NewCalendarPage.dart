@@ -7,9 +7,9 @@ import 'package:xitem/pages/sub/JoinCalendarSubPage.dart';
 import 'package:flutter/material.dart';
 
 class NewCalendarPage extends StatefulWidget {
-  const NewCalendarPage(this._calendarController, {super.key});
+  const NewCalendarPage({super.key, required this.calendarController});
 
-  final CalendarController _calendarController;
+  final CalendarController calendarController;
 
   @override
   State<StatefulWidget> createState() => _NewCalendarPageState();
@@ -59,6 +59,6 @@ class _NewCalendarPageState extends State<NewCalendarPage> with SingleTickerProv
           elevation: 0,
         ),
         backgroundColor: ThemeController.activeTheme().backgroundColor,
-        body: TabBarView(controller: _tabController, children: [CreateCalendarSubPage(widget._calendarController), JoinCalendarSubPage(widget._calendarController), JoinCalendarQrSubPage(widget._calendarController)]));
+        body: TabBarView(controller: _tabController, children: [CreateCalendarSubPage(widget.calendarController), JoinCalendarSubPage(widget.calendarController), JoinCalendarQrSubPage(widget.calendarController)]));
   }
 }

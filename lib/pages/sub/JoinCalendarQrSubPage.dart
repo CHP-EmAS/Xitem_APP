@@ -31,7 +31,7 @@ class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scanQRCodeButton = LoadingButton("QR Code scannen", "Erfolgreich erstellt", Colors.amber, _scanQrCode);
+    final scanQRCodeButton = LoadingButton(buttonText: "QR Code scannen", successText: "Erfolgreich erstellt", buttonColor: Colors.amber, callBack: _scanQrCode);
 
     return ListView(
       children: <Widget>[
@@ -204,7 +204,7 @@ class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
   }
 
   void _showColorPicker() {
-    PickerDialog.eventColorPickerDialog(_color).then((selectedColor) {
+    PickerDialog.eventColorPickerDialog(initialColor: _color).then((selectedColor) {
       if (selectedColor != null) {
         setState(() {
           _color = selectedColor;

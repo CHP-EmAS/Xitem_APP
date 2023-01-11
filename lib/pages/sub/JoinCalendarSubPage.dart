@@ -73,7 +73,7 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
-    final joinCalendarButton = LoadingButton("Kalender beitreten", "Erfolgreich beigetreten", Colors.amber, () async {
+    final joinCalendarButton = LoadingButton(buttonText: "Kalender beitreten", successText: "Erfolgreich beigetreten", buttonColor: Colors.amber, callBack: () async {
       FocusScope.of(context).unfocus();
 
       if (_id.text == "" || _password.text == "") return false;
@@ -156,7 +156,7 @@ class _JoinCalendarSubPageState extends State<JoinCalendarSubPage> {
                       onPressed: () {
                         FocusScope.of(context).unfocus();
 
-                        PickerDialog.eventColorPickerDialog(_color).then((selectedColor) {
+                        PickerDialog.eventColorPickerDialog(initialColor: _color).then((selectedColor) {
                           if (selectedColor != null) {
                             setState(() {
                               _color = selectedColor;

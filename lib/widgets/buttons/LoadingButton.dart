@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class LoadingButton extends StatefulWidget {
-  LoadingButton(this.buttonText, this.successText, this.buttonColor, this.callBack);
+  const LoadingButton({super.key, required this.buttonText, required this.successText, required this.buttonColor, required this.callBack});
 
   final String buttonText;
   final String successText;
@@ -10,26 +10,11 @@ class LoadingButton extends StatefulWidget {
   final Function callBack;
 
   @override
-  _LoadingButtonState createState() => _LoadingButtonState();
+  State<StatefulWidget> createState() => _LoadingButtonState();
 }
 
 class _LoadingButtonState extends State<LoadingButton> with SingleTickerProviderStateMixin {
   int buttonState = 0;
-
-  late String _buttonText;
-  late String _successText;
-  late Color _buttonColor;
-  late Function _callBack;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _buttonText = widget.buttonText;
-    _successText = widget.successText;
-    _buttonColor = widget.buttonColor;
-    _callBack = widget.callBack;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +55,7 @@ class _LoadingButtonState extends State<LoadingButton> with SingleTickerProvider
       buttonState = 1;
     });
 
-    _callBack().then((success) {
+    widget.callBack().then((success) {
       if (success) {
         setState(() {
           buttonState = 2;
@@ -87,7 +72,7 @@ class _LoadingButtonState extends State<LoadingButton> with SingleTickerProvider
     switch (buttonState) {
       case 0:
       case 1:
-        return _buttonColor;
+        return widget.buttonColor;
       case 2:
         return Colors.lightGreen;
       case 3:
@@ -107,7 +92,7 @@ class _LoadingButtonState extends State<LoadingButton> with SingleTickerProvider
           ),
         );
       case 2:
-        return Text(_successText,
+        return Text(widget.successText,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -117,7 +102,7 @@ class _LoadingButtonState extends State<LoadingButton> with SingleTickerProvider
       case 3:
       case 0:
       default:
-        return Text(_buttonText,
+        return Text(widget.buttonText,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:xitem/controllers/ThemeController.dart';
-import 'package:xitem/models/Event.dart';
 
 class SlidableEventCard extends StatelessWidget {
   final bool editable;
@@ -27,7 +26,7 @@ class SlidableEventCard extends StatelessWidget {
               icon:  Icons.share,
               backgroundColor: Colors.indigo,
               foregroundColor: Colors.white,
-              onPressed: (_) => onEventShareTapped,
+              onPressed: (_) => onEventShareTapped(),
             )
           ],
         ),
@@ -40,14 +39,14 @@ class SlidableEventCard extends StatelessWidget {
                 icon: Icons.edit,
                 backgroundColor: Colors.grey,
                 foregroundColor: Colors.white,
-                onPressed: (_) => onEventEditTapped,
+                onPressed: (_) => onEventEditTapped(),
               ),
               SlidableAction(
                 label: 'Löschen',
                 icon: Icons.delete,
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                onPressed: (_) => onEventDeleteTapped,
+                onPressed: (_) => onEventDeleteTapped(),
               ),
             ] : []
         ),

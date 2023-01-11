@@ -2,14 +2,14 @@ import 'package:xitem/api/AuthenticationApi.dart';
 import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
-import 'package:xitem/widgets/Buttons/LoadingButton.dart';
+import 'package:xitem/widgets/buttons/LoadingButton.dart';
 import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage(this._authenticationApi, {super.key});
+  const LoginPage({super.key, required this.authenticationApi});
 
-  final AuthenticationApi _authenticationApi;
+  final AuthenticationApi authenticationApi;
 
   @override
   State<StatefulWidget> createState() => _LoginPageState();
@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
             passwordField,
             forgetPasswordText(),
             const SizedBox(height: 25.0),
-            LoadingButton("Anmelden", "Anmelden", Colors.amber, _loginClick),
+            LoadingButton(buttonText: "Anmelden", successText: "Anmelden", buttonColor: Colors.amber, callBack: _loginClick),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -174,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
       ConfirmAction? answer = await StandardDialog.confirmDialog("Passwort zurücksetzen", "Möchtest du einen Wiederherstellungscode an\n$_lastTryEmail\nsenden?");
 
       if (answer == ConfirmAction.ok) {
-        ResponseCode sendPassEmail = await widget._authenticationApi.sendPasswordEmail(_lastTryEmail);
+        ResponseCode sendPassEmail = await widget.authenticationApi.sendPasswordEmail(_lastTryEmail);
 
         if (sendPassEmail == ResponseCode.success) {
           await StandardDialog.okDialog("E-Mail gesendet", "Wenn diese E-Mail in unserem System gespeichert ist, wurde ein Wiederherstellungscode gesendet.");

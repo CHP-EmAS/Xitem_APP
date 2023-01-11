@@ -1,6 +1,3 @@
-import 'package:xitem/models/Voting.dart';
-import 'package:flutter/cupertino.dart';
-
 abstract class ApiRequestData {
   Map<String, dynamic> toJson();
 }
@@ -126,36 +123,6 @@ class PatchEventRequest extends ApiRequestData {
         'description': _description,
         'daylong': _daylong,
         'color': _color,
-      };
-}
-
-class CreateVotingRequest extends ApiRequestData {
-  CreateVotingRequest(this._title, this._multipleChoice, this._abstentionAllowed, this._choices);
-
-  final String _title;
-
-  final bool _multipleChoice;
-  final bool _abstentionAllowed;
-
-  final List<NewChoice> _choices;
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'title': _title,
-        'multiple_choice': _multipleChoice,
-        'abstention_allowed': _abstentionAllowed,
-        'choices': _choices,
-      };
-}
-
-class VoteRequest extends ApiRequestData {
-  VoteRequest(this._choices);
-
-  final List<int> _choices;
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'choice_ids': _choices,
       };
 }
 

@@ -13,11 +13,11 @@ import 'package:xitem/widgets/dialogs/NoteDialog.dart';
 import 'package:xitem/widgets/dialogs/StandardDialog.dart';
 
 class NotesPage extends StatefulWidget {
-  const NotesPage(this._linkedCalendarID, this._calendarController, this._userController, {super.key});
+  const NotesPage({super.key, required this.linkedCalendarID, required this.calendarController, required this.userController});
 
-  final String _linkedCalendarID;
-  final CalendarController _calendarController;
-  final UserController _userController;
+  final String linkedCalendarID;
+  final CalendarController calendarController;
+  final UserController userController;
 
   @override
   State<StatefulWidget> createState() => _NotesPageState();
@@ -36,8 +36,8 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
   void initState() {
     super.initState();
 
-    _linkedCalendar = widget._calendarController.getCalendar(widget._linkedCalendarID);
-    _canCreateEvents = _linkedCalendar?.calendarMemberController.getCalendarMember(widget._userController.getAuthenticatedUser().id)?.canCreateEvents ?? false;
+    _linkedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
+    _canCreateEvents = _linkedCalendar?.calendarMemberController.getCalendarMember(widget.userController.getAuthenticatedUser().id)?.canCreateEvents ?? false;
 
     loadNotes();
   }
@@ -60,14 +60,14 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
   }
 
   void _onRefresh() async {
-    ResponseCode reloadCompleted = await widget._calendarController.reloadCalendar(widget._linkedCalendarID);
+    ResponseCode reloadCompleted = await widget.calendarController.reloadCalendar(widget.linkedCalendarID);
 
     if (reloadCompleted != ResponseCode.success) {
       _refreshController.refreshFailed();
       return;
     }
 
-    _linkedCalendar = widget._calendarController.getCalendar(widget._linkedCalendarID);
+    _linkedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
     setState(() {
       loadNotes();
     });
@@ -179,7 +179,7 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
       return;
     }
 
-    bool canEdit = _canCreateEvents || note.ownerID == widget._userController.getAuthenticatedUser().id;
+    bool canEdit = _canCreateEvents || note.ownerID == widget.userController.getAuthenticatedUser().id;
 
     NoteData? noteData = await NoteDialog.notePopup(note, canEdit);
     if (noteData == null) return;
@@ -196,7 +196,7 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
       switch (changeNote) {
         case ResponseCode.accessForbidden:
         case ResponseCode.insufficientPermissions:
-          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
+          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Termin in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
           break;
         case ResponseCode.noteNotFound:
           errorMessage = "Notiz konnte nicht gefunden werden.";
@@ -225,7 +225,7 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
       return;
     }
 
-    bool canDelete = _canCreateEvents || note.ownerID == widget._userController.getAuthenticatedUser().id;
+    bool canDelete = _canCreateEvents || note.ownerID == widget.userController.getAuthenticatedUser().id;
     if (!canDelete) {
       return;
     }

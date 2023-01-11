@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:xitem/api/ApiGateway.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
@@ -16,16 +17,73 @@ class EventApi extends ApiGateway {
   Future<ApiResponse<List<Event>>> loadEvents(String calendarID, DateTime beginPeriod, DateTime endPeriod) async {
     List<Event> eventList = <Event>[];
 
-    Response response =
-    await sendRequest("/filter/calendar/$calendarID/period?begin_date=${beginPeriod.toIso8601String()}&end_date=${endPeriod.toIso8601String()}", RequestType.get, null, null, true);
+    try {
+      Response response =
+      await sendRequest("/filter/calendar/$calendarID/period?begin_date=${beginPeriod.toIso8601String()}&end_date=${endPeriod.toIso8601String()}", RequestType.get, null, null, true);
 
-    if (response.statusCode == 200) {
-      Map<String, dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
 
-      if (data.containsKey("Events")) {
-        for (final event in data["Events"]) {
+        if (data.containsKey("Events")) {
+          for (final event in data["Events"]) {
+            final BigInt eventID = BigInt.parse(event["event_id"]);
+
+            final String title = event["title"];
+            final String description = event["description"];
+
+            DateTime startDate = DateTime.parse(event["begin_date"]);
+            DateTime endDate = DateTime.parse(event["end_date"]);
+
+            final DateTime creationDate = DateTime.parse(event["creation_date"]);
+
+            final int color = event["color"];
+
+            final String createdByUser = event["created_by_user"];
+            final bool daylong = event["daylong"];
+
+            final tzConvertedStartDate = tz.TZDateTime.from(startDate, Xitem.settingController.getTimeZone());
+            startDate = DateTime(tzConvertedStartDate.year, tzConvertedStartDate.month, tzConvertedStartDate.day, tzConvertedStartDate.hour, tzConvertedStartDate.minute);
+
+            final tzConvertedEndDate = tz.TZDateTime.from(endDate, Xitem.settingController.getTimeZone());
+            endDate = DateTime(tzConvertedEndDate.year, tzConvertedEndDate.month, tzConvertedEndDate.day, tzConvertedEndDate.hour, tzConvertedEndDate.minute);
+
+            Event newEvent = Event(
+                eventID,
+                startDate,
+                endDate,
+                title,
+                description,
+                color,
+                calendarID,
+                createdByUser,
+                daylong,
+                creationDate);
+
+            eventList.add(newEvent);
+          }
+
+          return ApiResponse(ResponseCode.success, eventList);
+        }
+      }
+
+      return ApiResponse(extractResponseCode(response));
+    } catch(error) {
+      debugPrint(error.toString());
+      return ApiResponse(ResponseCode.unknown);
+    }
+  }
+
+  Future<ApiResponse<Event>> loadSingleEvent(String calendarID, BigInt eventID) async {
+    try {
+      Response response = await sendRequest("/calendar/$calendarID/event/${eventID.toString()}", RequestType.get, null, null, true);
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (data.containsKey("Event")) {
+          Map<String, dynamic> event = data["Event"];
+
           final BigInt eventID = BigInt.parse(event["event_id"]);
-
           final String title = event["title"];
           final String description = event["description"];
 
@@ -33,9 +91,7 @@ class EventApi extends ApiGateway {
           DateTime endDate = DateTime.parse(event["end_date"]);
 
           final DateTime creationDate = DateTime.parse(event["creation_date"]);
-
-          final int color = int.parse(event["color"]);
-
+          final int color = event["color"];
           final String createdByUser = event["created_by_user"];
           final bool daylong = event["daylong"];
 
@@ -47,50 +103,15 @@ class EventApi extends ApiGateway {
 
           Event newEvent = Event(eventID, startDate, endDate, title, description, color, calendarID, createdByUser, daylong, creationDate);
 
-          eventList.add(newEvent);
+          return ApiResponse(ResponseCode.success, newEvent);
         }
-
-        return ApiResponse(ResponseCode.success, eventList);
       }
+
+      return ApiResponse(extractResponseCode(response));
+    } catch(error) {
+      debugPrint(error.toString());
+      return ApiResponse(ResponseCode.unknown);
     }
-
-    return ApiResponse(extractResponseCode(response));
-  }
-
-  Future<ApiResponse<Event>> loadSingleEvent(String calendarID, BigInt eventID) async {
-    Response response = await sendRequest("/calendar/$calendarID/event/${eventID.toString()}", RequestType.get, null, null, true);
-
-    if (response.statusCode == 200) {
-      Map<String, dynamic> data = jsonDecode(response.body);
-
-      if (data.containsKey("Event")) {
-        Map<String, dynamic> event = data["Event"];
-
-        final BigInt eventID = BigInt.parse(event["event_id"]);
-        final String title = event["title"];
-        final String description = event["description"];
-
-        DateTime startDate = DateTime.parse(event["begin_date"]);
-        DateTime endDate = DateTime.parse(event["end_date"]);
-
-        final DateTime creationDate = DateTime.parse(event["creation_date"]);
-        final int color = int.parse(event["color"]);
-        final String createdByUser = event["created_by_user"];
-        final bool daylong = event["daylong"];
-
-        final tzConvertedStartDate = tz.TZDateTime.from(startDate, Xitem.settingController.getTimeZone());
-        startDate = DateTime(tzConvertedStartDate.year, tzConvertedStartDate.month, tzConvertedStartDate.day, tzConvertedStartDate.hour, tzConvertedStartDate.minute);
-
-        final tzConvertedEndDate = tz.TZDateTime.from(endDate, Xitem.settingController.getTimeZone());
-        endDate = DateTime(tzConvertedEndDate.year, tzConvertedEndDate.month, tzConvertedEndDate.day, tzConvertedEndDate.hour, tzConvertedEndDate.minute);
-
-        Event newEvent = Event(eventID, startDate, endDate, title, description, color, calendarID, createdByUser, daylong, creationDate);
-
-        return ApiResponse(ResponseCode.success, newEvent);
-      }
-    }
-
-    return ApiResponse(extractResponseCode(response));
   }
 
   Future<ApiResponse<BigInt>> createEvent(String calendarID, CreateEventRequest requestData) async {
@@ -123,7 +144,7 @@ class EventApi extends ApiGateway {
 
       return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ApiResponse(ResponseCode.unknown);
     }
   }
@@ -152,7 +173,7 @@ class EventApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       //errorMessage = "Die Änderungen konnten nicht gespeichert werden werden, versuch es später erneut.";
       return ResponseCode.unknown;
     }
@@ -172,7 +193,7 @@ class EventApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       //errorMessage = "Beim Löschen des Events ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
       return ResponseCode.unknown;
     }

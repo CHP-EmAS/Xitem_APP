@@ -70,7 +70,7 @@ class _CreateCalendarSubPageState extends State<CreateCalendarSubPage> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0))),
     );
 
-    final createCalendarButton = LoadingButton("Kalender erstellen", "Erfolgreich erstellt", Colors.amber, _createCalendar);
+    final createCalendarButton = LoadingButton(buttonText: "Kalender erstellen", successText: "Erfolgreich erstellt", buttonColor: Colors.amber, callBack: _createCalendar);
 
     return ListView(
       children: <Widget>[
@@ -142,7 +142,7 @@ class _CreateCalendarSubPageState extends State<CreateCalendarSubPage> {
                       onPressed: () {
                         FocusScope.of(context).unfocus();
 
-                        PickerDialog.eventColorPickerDialog(_color).then((selectedColor) {
+                        PickerDialog.eventColorPickerDialog(initialColor: _color).then((selectedColor) {
                           if (selectedColor != null) {
                             setState(() {
                               _color = selectedColor;

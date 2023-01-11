@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -39,26 +40,44 @@ class JoinCalendarRequest extends ApiRequestData {
 }
 
 class PatchCalendarRequest extends ApiRequestData {
-  PatchCalendarRequest(this._title, this._canJoin, this._password);
+  PatchCalendarRequest(this.title, this.canJoin, this.colorLegend, this.password);
 
-  final String _title;
-  final bool _canJoin;
-  final String? _password;
+  final String title;
+  final bool canJoin;
+  final Map<int, String> colorLegend;
+
+  final String? password;
 
   @override
   Map<String, dynamic> toJson() {
-    if (_password == null) {
+    if (password == null) {
       return {
-        'title': _title,
-        'can_join': _canJoin,
+        'title': title,
+        'can_join': canJoin,
+        'raw_color_legend': _convertColorLegendToJson(colorLegend),
       };
     }
 
     return {
-      'title': _title,
-      'can_join': _canJoin,
-      'password': _password,
+      'title': title,
+      'can_join': canJoin,
+      'password': password,
     };
+  }
+
+  String _convertColorLegendToJson(Map<int, String> legend) {
+    List<dynamic> colorList = [];
+
+    legend.forEach((color, label) {
+      colorList.add({
+        'color': color,
+        'label': label
+      });
+    });
+
+    return jsonEncode({
+      'legend': colorList
+    });
   }
 }
 
@@ -94,7 +113,7 @@ class CalendarInvitationTokenRequest extends ApiRequestData {
 
 class AcceptCalendarInvitationRequest extends ApiRequestData {
   AcceptCalendarInvitationRequest(this._invitationToken, this._color, IconData icon)
-      : this._icon = icon.codePoint;
+      : _icon = icon.codePoint;
 
   final String _invitationToken;
   final int _color;
@@ -113,11 +132,31 @@ class LoadedCalendarData {
   final String fullName;
   final bool canJoin;
   final String creationDate;
-  //final bool isOwner = calendar["is_owner"];
-  //final bool canCreateEvents = calendar["can_create_events"];
-  //final bool canEditEvents = calendar["can_edit_events"];
   final int color;
   final IconData icon;
+  final Map<int, String> colorLegend;
 
-  LoadedCalendarData(this.id, this.fullName, this.canJoin, this.creationDate, this.color, this.icon);
+  LoadedCalendarData(this.id, this.fullName, this.canJoin, this.creationDate, this.color, this.icon, String rawColorLegend)
+  : colorLegend = convertRawColorLegend(rawColorLegend);
+
+  static Map<int, String> convertRawColorLegend(String json) {
+    Map<int, String> colorLegend = {};
+
+    try {
+      Map<String, dynamic> rawData = jsonDecode(json);
+      if (rawData.containsKey("legend")) {
+        for (final colorLabel in rawData["legend"]) {
+          final int color = colorLabel["color"];
+          final String label = colorLabel["label"];
+
+          colorLegend[color] = label;
+        }
+      }
+    } catch (error) {
+      debugPrint("Error when decoding color legend: $error");
+      return {};
+    }
+
+    return colorLegend;
+  }
 }

@@ -83,6 +83,10 @@ class BirthdayDialog {
               TextButton(
                 child: Text("Hinzufügen", style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18)),
                 onPressed: () {
+                  if(name.text.isEmpty) {
+                    return Navigator.pop(context, null);
+                  }
+
                   LocalBirthday data = LocalBirthday(name.text, birthday);
                   Navigator.pop(context, data);
                 },
@@ -90,7 +94,7 @@ class BirthdayDialog {
               TextButton(
                 child: Text('Abbrechen', style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 18)),
                 onPressed: () {
-                  Navigator.pop(context, null);
+                  return Navigator.pop(context, null);
                 },
               ),
             ],

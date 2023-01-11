@@ -1,44 +1,48 @@
 import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
 import 'package:xitem/api/ApiGateway.dart';
-import 'package:xitem/interfaces/ApiInterfaces.dart';
 import 'package:xitem/interfaces/CalendarApiInterfaces.dart';
-import 'package:xitem/models/Calendar.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 
 class CalendarApi extends ApiGateway {
-
   Future<ApiResponse<List<LoadedCalendarData>>> loadAllCalendars(final String userID) async {
-    List<LoadedCalendarData> assocCalendars = [];
+    try {
+      List<LoadedCalendarData> assocCalendars = [];
 
-    Response response = await sendRequest("/user/$userID/calendars", RequestType.get, null, null, true);
+      Response response = await sendRequest("/user/$userID/calendars", RequestType.get, null, null, true);
 
-    if (response.statusCode == 200) {
-      Map<String, dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
 
-      if (data.containsKey("associated_calendars")) {
-        for (final calendar in data["associated_calendars"]) {
-          final String id = calendar["calendarObject"]["calendar_id"];
-          final String fullName = calendar["calendarObject"]["calendar_name"];
-          final canJoin = calendar["calendarObject"]["can_join"];
-          final String creationDate = calendar["calendarObject"]["creation_date"];
-          //final bool isOwner = calendar["is_owner"];
-          //final bool canCreateEvents = calendar["can_create_events"];
-          //final bool canEditEvents = calendar["can_edit_events"];
-          final int color = int.parse(calendar["color"]);
-          final int iconPoint = calendar["icon"];
+        if (data.containsKey("associated_calendars")) {
+          for (final calendar in data["associated_calendars"]) {
+            final String id = calendar["calendarObject"]["calendar_id"];
+            final String fullName = calendar["calendarObject"]["calendar_name"];
+            final canJoin = calendar["calendarObject"]["can_join"];
+            final String creationDate = calendar["calendarObject"]["creation_date"];
+            //final bool isOwner = calendar["is_owner"];
+            //final bool canCreateEvents = calendar["can_create_events"];
+            //final bool canEditEvents = calendar["can_edit_events"];
+            final int color = calendar["color"];
+            final int iconPoint = calendar["icon"];
+            final String rawColorLegend = calendar["calendarObject"]["raw_color_legend"];
 
-          LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, IconData(iconPoint, fontFamily: 'MaterialIcons'));
+            LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, IconData(iconPoint, fontFamily: 'MaterialIcons'), rawColorLegend);
 
-          assocCalendars.add(newCalendar);
+            assocCalendars.add(newCalendar);
+          }
+
+          return ApiResponse(ResponseCode.success, assocCalendars);
         }
-
-        return ApiResponse(ResponseCode.success, assocCalendars);
       }
-    }
 
-    return ApiResponse(extractResponseCode(response));
+      return ApiResponse(extractResponseCode(response));
+    } catch (error) {
+      debugPrint(error.toString());
+      return ApiResponse(ResponseCode.unknown);
+    }
   }
 
   Future<ApiResponse<String>> createCalendar(CreateCalendarRequest requestData) async {
@@ -55,15 +59,15 @@ class CalendarApi extends ApiGateway {
 
       return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ApiResponse(ResponseCode.unknown);
     }
   }
 
   Future<ApiResponse<String>> joinCalendar(String hashName, JoinCalendarRequest requestData) async {
-    hashName = hashName.replaceAll(RegExp(r'#'), "%23");
-
     try {
+      hashName = hashName.replaceAll(RegExp(r'#'), "%23");
+
       Response response = await sendRequest("/calendar/$hashName/user", RequestType.post, requestData, null, true);
 
       Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -88,7 +92,7 @@ class CalendarApi extends ApiGateway {
 
       return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ApiResponse(ResponseCode.unknown);
     }
   }
@@ -112,7 +116,7 @@ class CalendarApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
@@ -140,37 +144,43 @@ class CalendarApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
 
   Future<ApiResponse<LoadedCalendarData>> loadSingleCalendar(String calendarID) async {
-    Response response = await sendRequest("/calendar/$calendarID", RequestType.get, null, null, true);
+    try {
+      Response response = await sendRequest("/calendar/$calendarID", RequestType.get, null, null, true);
 
-    if (response.statusCode == 200) {
-      Map<String, dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
 
-      if (data.containsKey("Calendar")) {
-        Map<String, dynamic> calendar = data["Calendar"];
+        if (data.containsKey("Calendar")) {
+          Map<String, dynamic> calendar = data["Calendar"];
 
-        final String id = calendar["calendarObject"]["calendar_id"];
-        final String fullName = calendar["calendarObject"]["calendar_name"];
-        final canJoin = calendar["calendarObject"]["can_join"];
-        final String creationDate = calendar["calendarObject"]["creation_date"];
-        //final bool isOwner = calendar["is_owner"];
-        //final bool canCreateEvents = calendar["can_create_events"];
-        //final bool canEditEvents = calendar["can_edit_events"];
-        final int color = int.parse(calendar["color"]);
-        final int iconPoint = calendar["icon"];
+          final String id = calendar["calendarObject"]["calendar_id"];
+          final String fullName = calendar["calendarObject"]["calendar_name"];
+          final canJoin = calendar["calendarObject"]["can_join"];
+          final String creationDate = calendar["calendarObject"]["creation_date"];
+          //final bool isOwner = calendar["is_owner"];
+          //final bool canCreateEvents = calendar["can_create_events"];
+          //final bool canEditEvents = calendar["can_edit_events"];
+          final int color = calendar["color"];
+          final int iconPoint = calendar["icon"];
+          final String rawColorLegend = calendar["calendarObject"]["raw_color_legend"];
 
-        LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, IconData(iconPoint, fontFamily: 'MaterialIcons'));
+          LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, IconData(iconPoint, fontFamily: 'MaterialIcons'), rawColorLegend);
 
-        return ApiResponse(ResponseCode.success, newCalendar);
+          return ApiResponse(ResponseCode.success, newCalendar);
+        }
       }
-    }
 
-    return ApiResponse(extractResponseCode(response));
+      return ApiResponse(extractResponseCode(response));
+    } catch (error) {
+      debugPrint(error.toString());
+      return ApiResponse(ResponseCode.unknown);
+    }
   }
 
   Future<ResponseCode> patchCalendar(String calendarID, PatchCalendarRequest requestData) async {
@@ -183,7 +193,7 @@ class CalendarApi extends ApiGateway {
       // } else if (response.statusCode == 403) {
       //   errorMessage = "Du kannst diese Einstellungen nicht ändern."
 
-     /* case "short_password":
+      /* case "short_password":
           errorMessage = "Das Passwort muss mindestens 6 Zeichen lang sein."
         case "invalid_title":
           errorMessage = "Unzulässiger Name. Zulässige Zeichen: a-z, A-Z, 0-9, Leerzeichen, _, -"
@@ -193,7 +203,7 @@ class CalendarApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
@@ -214,7 +224,7 @@ class CalendarApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
@@ -244,7 +254,7 @@ class CalendarApi extends ApiGateway {
 
       return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ApiResponse(ResponseCode.unknown);
     }
   }
@@ -279,7 +289,7 @@ class CalendarApi extends ApiGateway {
 
       return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ApiResponse(ResponseCode.unknown);
     }
   }

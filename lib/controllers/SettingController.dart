@@ -11,8 +11,8 @@ class SettingController {
   static const String _timezoneKey = "timezoneKey";
   static const String _holidayStateCodeKey = "holidayStateCodeKey";
   static const String _eventStandardColorKey = "eventStandardColorKey";
-  static const String _showNewVotingOnEventScreenKey = "showNewVotingOnEventScreenKey";
-  static const String _showBirthdaysOnHolidayScreenKey = "showBirthdaysOnHolidayScreenKey";
+  static const String _showBirthdaysInCalendarScreenKey = "showBirthdaysInCalendarScreenKey";
+  static const String _showHolidaysInCalendarScreenKey = "showHolidaysInCalendarScreenKey";
 
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
@@ -60,23 +60,23 @@ class SettingController {
     return await _prefs.setInt(_eventStandardColorKey, color);
   }
 
-  bool getShowNewVotingOnEventScreen() {
-    bool showNewVotingOnEventScreen = _prefs.getBool(_showNewVotingOnEventScreenKey) ?? true;
+  bool getShowBirthdaysInCalendarScreen() {
+    bool showNewVotingOnEventScreen = _prefs.getBool(_showBirthdaysInCalendarScreenKey) ?? true;
 
     return showNewVotingOnEventScreen;
   }
 
-  Future<bool> setShowNewVotingOnEventScreen(bool show) async {
-    return await _prefs.setBool(_showNewVotingOnEventScreenKey, show);
+  Future<bool> setShowBirthdaysInCalendarScreen(bool show) async {
+    return await _prefs.setBool(_showBirthdaysInCalendarScreenKey, show);
   }
 
-  bool getShowBirthdaysOnHolidayScreen() {
-    bool showNewVotingOnEventScreen = _prefs.getBool(_showBirthdaysOnHolidayScreenKey) ?? true;
+  bool getShowHolidaysInCalendarScreen() {
+    bool showNewVotingOnEventScreen = _prefs.getBool(_showHolidaysInCalendarScreenKey) ?? true;
 
     return showNewVotingOnEventScreen;
   }
 
-  Future<bool> setShowBirthdaysOnHolidayScreen(bool show) async {
-    return await _prefs.setBool(_showBirthdaysOnHolidayScreenKey, show);
+  Future<bool> setShowHolidaysInCalendarScreen(bool show) async {
+    return await _prefs.setBool(_showHolidaysInCalendarScreenKey, show);
   }
 }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter/material.dart' as material;
 import 'package:http_parser/http_parser.dart';
 import 'package:image/image.dart';
 import 'package:path/path.dart';
@@ -56,7 +56,7 @@ class UserApi extends ApiGateway {
 
     File? avatar;
     if (loadedAvatar.code != ResponseCode.success) {
-      print("Avatar could not be loaded!");
+      material.debugPrint("Avatar could not be loaded!");
     } else {
       avatar = loadedAvatar.value as File;
     }
@@ -98,7 +98,7 @@ class UserApi extends ApiGateway {
 
     File? avatar;
     if (loadedAvatar.code != ResponseCode.success) {
-      print("Avatar could not be loaded!");
+      material.debugPrint("Avatar could not be loaded!");
     } else {
       avatar = loadedAvatar.value as File;
     }
@@ -107,7 +107,7 @@ class UserApi extends ApiGateway {
   }
 
   Future<ApiResponse<File>> loadAvatar(final String userID) async {
-    print("Downloading Avatar...");
+    material.debugPrint("Downloading Avatar...");
 
     Response response = await get(Uri.parse("${ApiGateway.apiHost}/user/$userID/avatar"));
 
@@ -161,7 +161,7 @@ class UserApi extends ApiGateway {
 
       return ResponseCode.success;
     } catch (error) {
-      print(error);
+      material.debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }

@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:ui';
-
+import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:xitem/api/ApiGateway.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
@@ -24,7 +23,7 @@ class NoteApi extends ApiGateway {
           final String title = note["title"];
           final String content = note["content"];
 
-          final int color = int.parse(note["color"]);
+          final int color = note["color"];
           final bool pinned = note["pinned"];
 
           final String ownerID = note["owner_id"];
@@ -59,7 +58,7 @@ class NoteApi extends ApiGateway {
 
         final String ownerID = note["owner_id"];
 
-        final int color = int.parse(note["color"]);
+        final int color = note["color"];
         final bool pinned = note["pinned"];
 
         final DateTime creationDate = DateTime.parse(note["creation_date"]);
@@ -104,7 +103,7 @@ class NoteApi extends ApiGateway {
 
       return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       //errorMessage = "Beim Erstellen der Notiz ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
       return ApiResponse(ResponseCode.unknown);
     }
@@ -120,7 +119,7 @@ class NoteApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
@@ -135,7 +134,7 @@ class NoteApi extends ApiGateway {
 
       return extractResponseCode(response);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
       return ResponseCode.unknown;
     }
   }
