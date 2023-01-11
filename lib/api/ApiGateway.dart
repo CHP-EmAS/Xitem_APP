@@ -132,7 +132,7 @@ class ApiGateway {
 
     //include auth token if requested
     if (includeAuthToken) {
-      headers["auth-token"] = await SecureStorage.readVariable(SecureVariable.authToken);
+      headers["auth-token"] = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
     }
 
     //include security token if requested, this token must be requested in advance
@@ -185,8 +185,8 @@ class ApiGateway {
   Future<bool> _refreshToken() async {
     debugPrint("Refreshing Auth-Token..");
 
-    String authToken = await SecureStorage.readVariable(SecureVariable.authToken);
-    String refreshToken = await SecureStorage.readVariable(SecureVariable.refreshToken);
+    String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
+    String refreshToken = await StateController.getSecuredVariable(SecureVariable.refreshToken);
 
     if (authToken.isEmpty || refreshToken.isEmpty) {
       debugPrint("Refresh-Error: authToken or refreshToken not found!");
@@ -201,7 +201,7 @@ class ApiGateway {
 
       if (response.statusCode == 200) {
         if (response.headers.containsKey("auth-token")) {
-          await SecureStorage.writeVariable(SecureVariable.authToken, response.headers["auth-token"] as String);
+          await StateController.setAuthToken(response.headers["auth-token"] as String);
           debugPrint("Auth-Token refreshed!");
           return true;
         }
@@ -216,8 +216,8 @@ class ApiGateway {
   Future<String> _getSecurityToken() async {
     debugPrint("Requesting Security-Token..");
 
-    String authToken = await SecureStorage.readVariable(SecureVariable.authToken);
-    String refreshToken = await SecureStorage.readVariable(SecureVariable.refreshToken);
+    String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
+    String refreshToken = await StateController.getSecuredVariable(SecureVariable.refreshToken);
 
     if (authToken.isEmpty || refreshToken.isEmpty) {
       debugPrint("Request-Security-Error: authToken or refreshToken not found!");

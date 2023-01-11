@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:crypto/crypto.dart';
 import 'package:xitem/api/ApiGateway.dart';
+import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 import 'package:xitem/utils/SecureStorage.dart';
 
 class AuthenticationApi extends ApiGateway {
+
   Future<ResponseCode> checkHashPassword(String password) async {
-    String storedPassword = await SecureStorage.readVariable(SecureVariable.hashedPassword);
+    String storedPassword = await StateController.getSecuredVariable(SecureVariable.hashedPassword);
 
     if (storedPassword.isEmpty) {
       debugPrint("Stored password not found!");
@@ -27,10 +29,10 @@ class AuthenticationApi extends ApiGateway {
     }
   }
 
-  Future<ApiResponse<String>> localLogin() async {
+  Future<ApiResponse<String>> requestUserIdByToken() async {
     try {
-      String authToken = await SecureStorage.readVariable(SecureVariable.authToken);
-      String refreshToken = await SecureStorage.readVariable(SecureVariable.refreshToken);
+      String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
+      String refreshToken = await StateController.getSecuredVariable(SecureVariable.refreshToken);
 
       if (authToken.isEmpty || refreshToken.isEmpty) {
         return ApiResponse(ResponseCode.tokenRequired);
@@ -52,31 +54,47 @@ class AuthenticationApi extends ApiGateway {
     return ApiResponse(ResponseCode.unknown);
   }
 
-  Future<ApiResponse<String>> remoteLogin(UserLoginRequest requestData) async {
+  Future<ApiResponse<RemoteAuthenticationData>> remoteLogin(UserLoginRequest requestData) async {
     try {
       Response response = await sendRequest("/auth/login", RequestType.post, requestData);
 
       Map<String, dynamic> responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        String? authToken;
+        String? refreshToken;
+        String? userID;
+
         if (response.headers.containsKey("auth-token")) {
-          await SecureStorage.writeVariable(SecureVariable.authToken, response.headers["auth-token"].toString());
+          authToken = response.headers["auth-token"];
         } else {
           debugPrint("Login-Error: No auth-token found");
         }
 
         if (response.headers.containsKey("refresh-token")) {
-          await SecureStorage.writeVariable(SecureVariable.refreshToken, response.headers["refresh-token"].toString());
+          refreshToken = response.headers["refresh-token"];
         } else {
           debugPrint("Login-Error: No refresh-token found");
         }
 
-        var passwordBytes = utf8.encode(requestData.password);
-        SecureStorage.writeVariable(SecureVariable.hashedPassword, sha256.convert(passwordBytes).toString());
-
         if (responseData.containsKey("user_id")) {
-          return ApiResponse(ResponseCode.success, responseData["user_id"].toString());
+          userID = responseData["user_id"];
+        } else {
+          debugPrint("Login-Error: No user ID found");
         }
+
+        if(authToken == null || refreshToken == null || userID == null) {
+          return ApiResponse(ResponseCode.authenticationFailed);
+        }
+
+        return ApiResponse(
+            ResponseCode.success,
+            RemoteAuthenticationData(
+                authenticationToken: authToken,
+                refreshToken: refreshToken,
+                userID: userID
+            )
+        );
       }
 
       if (response.statusCode == 401) {
@@ -160,4 +178,12 @@ class AuthenticationApi extends ApiGateway {
 
     return ResponseCode.success;
   }
+}
+
+class RemoteAuthenticationData {
+  final String authenticationToken;
+  final String refreshToken;
+  final String userID;
+
+  RemoteAuthenticationData({required this.authenticationToken, required this.refreshToken, required this.userID});
 }

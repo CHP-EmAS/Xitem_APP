@@ -162,6 +162,7 @@ enum ResponseCode {
   refreshToken,
   logout,
   timeout,
+  internalError,
 
   unknown,
 }

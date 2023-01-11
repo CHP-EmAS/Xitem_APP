@@ -1,9 +1,9 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorage {
-  static const _storage = FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  static Future<String> readVariable(SecureVariable variable) async {
+  Future<String> readVariable(SecureVariable variable) async {
     String? content = await _storage.read(key: _variableToKey(variable));
 
     if(content == null) {
@@ -13,19 +13,19 @@ class SecureStorage {
     return content;
   }
 
-  static Future<void> writeVariable(SecureVariable variable, String value) async {
+  Future<void> writeVariable(SecureVariable variable, String value) async {
     await _storage.write(key: _variableToKey(variable), value: value);
   }
 
-  static Future<void> wipeStorage() async {
+  Future<void> wipeStorage() async {
     await _storage.deleteAll();
   }
 
-  static String _variableToKey(SecureVariable variable) {
+  String _variableToKey(SecureVariable variable) {
     switch(variable) {
       case SecureVariable.hashedPassword:
         return "hash";
-      case SecureVariable.authToken:
+      case SecureVariable.authenticationToken:
         return "auth";
       case SecureVariable.refreshToken:
         return "refresh";
@@ -35,6 +35,6 @@ class SecureStorage {
 
 enum SecureVariable {
   hashedPassword,
-  authToken,
+  authenticationToken,
   refreshToken
 }

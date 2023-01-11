@@ -90,7 +90,7 @@ class NoteItem extends StatelessWidget {
                 if (note.title.isNotEmpty == true) const SizedBox(height: 14),
                 Flexible(
                   flex: 1,
-                  child: Text(note.content ?? ''), // wrapping using a Flexible to avoid overflow
+                  child: Text(note.content), // wrapping using a Flexible to avoid overflow
                 ),
               ],
             ),

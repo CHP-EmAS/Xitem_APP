@@ -7,6 +7,7 @@ import 'package:path/path.dart';
 import 'package:http/http.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xitem/api/ApiGateway.dart';
+import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
 import 'package:xitem/models/User.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
@@ -134,7 +135,7 @@ class UserApi extends ApiGateway {
     avatarImage = File(avatarImage.path.replaceAll(basename(avatarImage.path), "out.png"))..writeAsBytesSync(encodePng(image));
     request.files.add(MultipartFile.fromBytes("avatar", avatarImage.readAsBytesSync(), filename: basename(avatarImage.path), contentType: MediaType("image", "png")));
 
-    String authToken = await SecureStorage.readVariable(SecureVariable.authToken);
+    String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
     if (authToken.isEmpty) {
       return ResponseCode.unknown;
     }
