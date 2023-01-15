@@ -36,6 +36,11 @@ class UserDialog {
                     child: CircleAvatar(
                       backgroundImage: AvatarImageProvider.get(user.avatar),
                       radius: 40,
+                      child: GestureDetector(
+                        onTap: () async {
+                          UserDialog.profilePictureDialog(user.avatar);
+                        },
+                      ),
                     ),
                   ),
                   Divider(height: 20, color: ThemeController.activeTheme().dividerColor),

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:xitem/api/AuthenticationApi.dart';
 import 'package:xitem/api/CalendarMemberApi.dart';
+import 'package:xitem/controllers/AuthenticationController.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
 import 'package:xitem/models/CalendarMember.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 
 class CalendarMemberController {
-  CalendarMemberController(this._calendarMemberApi, this._authenticationApi);
+  CalendarMemberController(this._calendarMemberApi, this._authenticationController);
 
   final CalendarMemberApi _calendarMemberApi;
-  final AuthenticationApi _authenticationApi;
+  final AuthenticationController _authenticationController;
 
   late final String _relatedCalendarID;
   late final String _authenticatedUserID;
@@ -141,7 +141,7 @@ class CalendarMemberController {
       throw AssertionError("CalendarMemberController must be initialized before it can be accessed!");
     }
 
-    if(await _authenticationApi.checkHashPassword(userPassword) != ResponseCode.success) {
+    if(await _authenticationController.compareHashPassword(userPassword) != ResponseCode.success) {
       return ResponseCode.wrongPassword;
     }
 

@@ -134,6 +134,101 @@ class ThemeController {
   ];
   static const int defaultNoteColorIndex = 0;
 
+  static const List<IconData> calendarIcons = [
+    Icons.calendar_today,
+    Icons.event,
+    Icons.event_available,
+    Icons.event_note,
+    Icons.date_range,
+    Icons.assignment_late,
+    Icons.cake,
+    Icons.favorite,
+    Icons.favorite_border,
+    Icons.star,
+    Icons.star_border,
+    Icons.all_inclusive,
+    Icons.extension,
+    Icons.cloud,
+    Icons.filter_drama,
+    Icons.filter_hdr,
+    Icons.filter_vintage,
+    Icons.whatshot,
+    Icons.home,
+    Icons.group,
+    Icons.people_outline,
+    Icons.directions_bike,
+    Icons.directions_bus,
+    Icons.directions_car,
+    Icons.directions_railway,
+    Icons.directions_boat,
+    Icons.local_airport,
+    Icons.hotel,
+    Icons.ac_unit,
+    Icons.brightness_2,
+    Icons.wb_sunny,
+    Icons.work,
+    Icons.school,
+    Icons.schedule,
+    Icons.audiotrack,
+    Icons.beach_access,
+    Icons.fitness_center,
+    Icons.pool,
+    Icons.pets,
+    Icons.alarm,
+    Icons.android,
+    Icons.build,
+    Icons.camera,
+    Icons.apps,
+    Icons.blur_on,
+    Icons.bubble_chart,
+    Icons.dashboard,
+    Icons.layers,
+    Icons.equalizer,
+    Icons.timeline,
+    Icons.account_balance,
+    Icons.euro_symbol,
+    Icons.attach_money,
+    Icons.check,
+    Icons.done_outline,
+    Icons.block,
+    Icons.clear,
+    Icons.lock,
+    Icons.delete,
+    Icons.priority_high,
+    Icons.mood,
+    Icons.create,
+    Icons.call,
+    Icons.email,
+    Icons.business,
+    Icons.language,
+    Icons.attach_file,
+    Icons.business_center,
+    Icons.build,
+    Icons.translate,
+    Icons.child_friendly,
+    Icons.flag,
+    Icons.location_on,
+    Icons.public,
+    Icons.fingerprint,
+    Icons.restaurant,
+    Icons.fastfood,
+    Icons.format_paint,
+    Icons.color_lens,
+    Icons.free_breakfast,
+    Icons.explore,
+    Icons.computer,
+    Icons.power_settings_new,
+    Icons.memory,
+    Icons.headset,
+    Icons.http,
+    Icons.gamepad,
+    Icons.videogame_asset,
+    Icons.golf_course,
+    Icons.local_movies,
+    Icons.event_seat,
+  ];
+  static const int defaultCalendarIconIndex = 0;
+
   static AppTheme _currentTheme = _darkTheme;
 
   static void loadThemeFromSettings(SettingController settingController) {
@@ -166,5 +261,13 @@ class ThemeController {
     }
 
     return const Color(0xFFFFF476);
+  }
+
+  static IconData getCalendarIcon(int index) {
+    if(index < calendarIcons.length) {
+      return calendarIcons[index];
+    }
+
+    return Icons.calendar_today;
   }
 }

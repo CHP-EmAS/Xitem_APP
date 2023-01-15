@@ -1,13 +1,11 @@
 import 'dart:convert';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import 'ApiInterfaces.dart';
 
 class CreateCalendarRequest extends ApiRequestData {
-  CreateCalendarRequest(this._title, this._password, this._canJoin, this._color, IconData icon)
-      : _icon = icon.codePoint;
+  CreateCalendarRequest(this._title, this._password, this._canJoin, this._color, this._icon);
 
   final String _title;
   final String _password;
@@ -28,8 +26,7 @@ class CreateCalendarRequest extends ApiRequestData {
 }
 
 class JoinCalendarRequest extends ApiRequestData {
-  JoinCalendarRequest(this._password, this._color, IconData icon)
-       : _icon = icon.codePoint;
+  JoinCalendarRequest(this._password, this._color, this._icon);
 
   final String _password;
   final int _color;
@@ -82,8 +79,7 @@ class PatchCalendarRequest extends ApiRequestData {
 }
 
 class PatchCalendarLayoutRequest extends ApiRequestData {
-  PatchCalendarLayoutRequest(this._color, IconData icon)
-      : _icon = icon.codePoint;
+  PatchCalendarLayoutRequest(this._color, this._icon);
 
   final int _color;
   final int _icon;
@@ -112,8 +108,7 @@ class CalendarInvitationTokenRequest extends ApiRequestData {
 }
 
 class AcceptCalendarInvitationRequest extends ApiRequestData {
-  AcceptCalendarInvitationRequest(this._invitationToken, this._color, IconData icon)
-      : _icon = icon.codePoint;
+  AcceptCalendarInvitationRequest(this._invitationToken, this._color, this._icon);
 
   final String _invitationToken;
   final int _color;
@@ -133,7 +128,7 @@ class LoadedCalendarData {
   final bool canJoin;
   final String creationDate;
   final int color;
-  final IconData icon;
+  final int icon;
   final Map<int, String> colorLegend;
 
   LoadedCalendarData(this.id, this.fullName, this.canJoin, this.creationDate, this.color, this.icon, String rawColorLegend)

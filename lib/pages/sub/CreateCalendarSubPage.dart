@@ -3,7 +3,6 @@ import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
 import 'package:xitem/widgets/buttons/LoadingButton.dart';
-import 'package:xitem/widgets/IconPicker.dart';
 import 'package:flutter/material.dart';
 import 'package:xitem/widgets/dialogs/CalendarDialog.dart';
 import 'package:xitem/widgets/dialogs/PickerDialog.dart';
@@ -28,7 +27,7 @@ class _CreateCalendarSubPageState extends State<CreateCalendarSubPage> {
   bool _canJoin = true;
   bool _alert = true;
   int _color = ThemeController.defaultEventColorIndex;
-  IconData _icon = IconPicker.defaultIcons[0];
+  int _currentIconIndex = ThemeController.defaultCalendarIconIndex;
 
   @override
   void initState() {
@@ -175,15 +174,15 @@ class _CreateCalendarSubPageState extends State<CreateCalendarSubPage> {
                   Expanded(
                     flex: 2,
                     child: IconButton(
-                      icon: Icon(_icon),
+                      icon: Icon(ThemeController.getCalendarIcon(_currentIconIndex)),
                       color: Colors.white70,
                       iconSize: 40,
                       onPressed: () {
                         FocusScope.of(context).unfocus();
-                        PickerDialog.iconPickerDialog(_icon).then((selectedIcon) {
+                        PickerDialog.iconPickerDialog(_currentIconIndex).then((selectedIcon) {
                           if (selectedIcon != null) {
                             setState(() {
-                              _icon = selectedIcon;
+                              _currentIconIndex = selectedIcon;
                             });
                           }
                         });
@@ -247,7 +246,7 @@ class _CreateCalendarSubPageState extends State<CreateCalendarSubPage> {
 
     if (_name.text == "" || _password.text == "") return false;
 
-    return await widget._calendarController.createCalendar(_name.text, _password.text, _canJoin, _color, _icon).then((createCalendar) async {
+    return await widget._calendarController.createCalendar(_name.text, _password.text, _canJoin, _color, _currentIconIndex).then((createCalendar) async {
       String? calendarHash = createCalendar.value;
 
       String errorMessage = "";

@@ -192,8 +192,8 @@ class EventDialog {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Icon(
-                          calendar.icon,
-                          color: ThemeController.getEventColor(calendar.color),
+                          ThemeController.getCalendarIcon(calendar.iconIndex),
+                          color: ThemeController.getEventColor(calendar.colorIndex),
                           size: 30,
                         ),
                         const SizedBox(

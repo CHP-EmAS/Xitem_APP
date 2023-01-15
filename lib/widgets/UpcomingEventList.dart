@@ -115,9 +115,9 @@ class UpcomingEventList extends StatelessWidget {
         color: Colors.transparent,
         splashColor: Colors.transparent,
         icon: Icon(
-          uiEvent.calendar.icon,
+          ThemeController.getCalendarIcon(uiEvent.calendar.iconIndex),
           size: 35,
-          color: ThemeController.getEventColor(uiEvent.calendar.color),
+          color: ThemeController.getEventColor(uiEvent.calendar.colorIndex),
         ),
         onPressed: () => onCalendarIconTapped(uiEvent.calendar.id),
       ),

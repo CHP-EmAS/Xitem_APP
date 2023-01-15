@@ -13,12 +13,9 @@ class PickerDialog {
       return null;
     }
 
-    debugPrint(colorLegend.toString());
-
     return showDialog<int>(
       context: currentContext,
       builder: (BuildContext context) {
-
         int currentColor = initialColor;
 
         return StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
@@ -65,16 +62,16 @@ class PickerDialog {
     );
   }
 
-  static Future<IconData?> iconPickerDialog(IconData initIcon) async {
+  static Future<int?> iconPickerDialog(int initIconIndex) async {
     BuildContext? currentContext = StateController.navigatorKey.currentContext;
     if (currentContext == null) {
       return null;
     }
 
-    return showDialog<IconData>(
+    return showDialog<int>(
       context: currentContext,
       builder: (BuildContext context) {
-        IconData currentIcon = initIcon;
+        int currentIconIndex = initIconIndex;
 
         return AlertDialog(
           title: const Text('Wähle ein Icon',
@@ -83,9 +80,9 @@ class PickerDialog {
               )),
           content: SingleChildScrollView(
             child: IconPicker(
-              pickerIcon: currentIcon,
-              onIconChanged: (IconData pickedIcon) {
-                currentIcon = pickedIcon;
+              currentIconIndex: initIconIndex,
+              onIconChanged: (int pickedIconIndex) {
+                currentIconIndex = pickedIconIndex;
               },
             ),
           ),
@@ -97,67 +94,13 @@ class PickerDialog {
                     fontSize: 18,
                   )),
               onPressed: () {
-                Navigator.pop(context, currentIcon);
+                Navigator.pop(context, currentIconIndex);
               },
             ),
           ],
         );
       },
     );
-  }
-
-  static Future<TimeOfDay?> timePickerDialog(TimeOfDay initTime) async {
-    BuildContext? currentContext = StateController.navigatorKey.currentContext;
-    if (currentContext == null) {
-      return null;
-    }
-
-    return showDialog<TimeOfDay>(
-        context: currentContext,
-        builder: (BuildContext context) {
-          TimeOfDay currentTime = initTime;
-
-          return AlertDialog(
-            contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            backgroundColor: ThemeController.activeTheme().infoDialogBackgroundColor,
-            // content: TimePickerWidget(
-            //     maxDateTime: DateTime(0, 0, 0, 23, 59),
-            //     minDateTime: DateTime(0, 0, 0, 0, 0),
-            //     dateFormat: "HH:mm",
-            //     initDateTime: DateTime(0, 0, 0, currentTime.hour, currentTime.minute),
-            //     locale: DateTimePickerLocale.de,
-            //     pickerTheme: DateTimePickerTheme(
-            //         itemTextStyle: TextStyle(color: ThemeController.activeTheme().infoDialogTextColor),
-            //         showTitle: false,
-            //         backgroundColor: ThemeController.activeTheme().infoDialogBackgroundColor,
-            //         pickerHeight: 120,
-            //         itemHeight: 40),
-            //     onChange: (selectedTime, selectedIndex) {
-            //       currentTime = TimeOfDay(hour: selectedTime.hour, minute: selectedTime.minute);
-            //     }),
-            elevation: 3,
-            actions: <Widget>[
-              TextButton(
-                child: Text(
-                  'Ok',
-                  style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 16),
-                ),
-                onPressed: () {
-                  Navigator.pop(context, currentTime);
-                },
-              ),
-              TextButton(
-                child: Text(
-                  'Abbrechen',
-                  style: TextStyle(color: ThemeController.activeTheme().globalAccentColor, fontSize: 16),
-                ),
-                onPressed: () {
-                  Navigator.pop(context, null);
-                },
-              ),
-            ],
-          );
-        });
   }
 
   static Future<tz.Location?> timezonePickerDialog(tz.Location initLocation) async {

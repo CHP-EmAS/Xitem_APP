@@ -10,11 +10,11 @@ class StartUpPage extends StatefulWidget {
   State<StatefulWidget> createState() => _StartUpPageState();
 }
 
-class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStateMixin {
+class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStateMixin, AppStateListener {
 
   late final AnimationController _progressAnimationController;
-  final ValueNotifier<int> _progress = ValueNotifier<int>(0);
   String _errorMessage = "";
+  String _progressMessage = "";
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStat
       setState(() {});
     });
 
-    _progress.addListener(_onProgressValueChanges);
+    StateController.registerListener(this);
 
     initializeAppState();
   }
@@ -35,12 +35,54 @@ class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStat
   @override
   void dispose() {
     _progressAnimationController.dispose();
-    _progress.dispose();
+    StateController.removeListener(this);
     super.dispose();
   }
 
+  @override
+  void onAppStateChanged(AppState oldState, AppState newState) {
+    switch(newState) {
+      case AppState.uninitialized:
+        _progressMessage = "Starte Xitem...";
+        setProgress(0);
+        break;
+      case AppState.connecting:
+        _progressMessage = "Verbinden...";
+        setProgress(10);
+        break;
+      case AppState.authenticating:
+        _progressMessage = "Authentifizieren...";
+        setProgress(20);
+        break;
+      case AppState.authenticated:
+        _progressMessage = "♥";
+        setProgress(40);
+        break;
+      case AppState.initialisingUserController:
+        _progressMessage = "Empfange Nutzerdaten...";
+        setProgress(55);
+        break;
+      case AppState.initialisingCalendarController:
+        _progressMessage = "Befülle Kalender...";
+        setProgress(85);
+        break;
+      case AppState.initialisingHolidayController:
+        _progressMessage = "Berechne Feiertage...";
+        setProgress(95);
+        break;
+      case AppState.initialisingBirthdayController:
+        _progressMessage = "Lade Geburtstage...";
+        setProgress(98);
+        break;
+      case AppState.initialized:
+        _progressMessage = "Alles Tip Top 😍";
+        setProgress(100);
+        break;
+    }
+  }
+
   void initializeAppState() async {
-    StartupResponse startUpCode = await StateController.initializeAppState(progress: _progress);
+    StartupResponse startUpCode = await StateController.initializeAppState();
 
     switch(startUpCode) {
       case StartupResponse.success:
@@ -91,6 +133,25 @@ class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStat
   }
 
   Widget _buildProgressIndicator() {
+
+    Widget progressBar = Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 100.0),
+          child: LinearProgressIndicator(
+            value: _progressAnimationController.value,
+            backgroundColor: Colors.black,
+            color: Colors.amber,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Text(_progressMessage, textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Montserrat', color: ThemeController.activeTheme().textColor, fontSize: 16)),
+        ),
+      ],
+    );
+
     return Column(
       children: [
         const SpinKitFoldingCube(
@@ -98,15 +159,8 @@ class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStat
           size: 30,
         ),
         const SizedBox(height: 40),
-        if(_progressAnimationController.value > 0.05)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50.0),
-            child: LinearProgressIndicator(
-              value: _progressAnimationController.value,
-              backgroundColor: Colors.black,
-              color: Colors.amber,
-            ),
-          )
+        if(_progressAnimationController.value > 0)
+          progressBar,
       ],
     );
   }
@@ -128,8 +182,7 @@ class _StartUpPageState extends State<StartUpPage> with SingleTickerProviderStat
     );
   }
 
-  void _onProgressValueChanges() {
-    int progress = _progress.value;
-    _progressAnimationController.animateTo(progress.toDouble()/100, curve: Curves.linear, duration: const Duration(seconds: 1));
+  void setProgress(double progress) {
+    _progressAnimationController.animateTo(progress/100, curve: Curves.linear, duration: const Duration(seconds: 1));
   }
 }

@@ -49,9 +49,9 @@ class CalendarList extends StatelessWidget {
       color: ThemeController.activeTheme().cardColor,
       child: ListTile(
         leading: Icon(
-          calendarCard.calendar.icon,
+          ThemeController.getCalendarIcon(calendarCard.calendar.iconIndex),
           size: 40,
-          color: ThemeController.getEventColor(calendarCard.calendar.color),
+          color: ThemeController.getEventColor(calendarCard.calendar.colorIndex),
         ),
         title: Text(
           calendarCard.calendar.name,

@@ -208,7 +208,7 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
     _showBirthdaysInCalendar = Xitem.settingController.getShowBirthdaysInCalendarScreen();
     _showHolidaysInCalendar = Xitem.settingController.getShowHolidaysInCalendarScreen();
 
-    StateController.getApiInfo().then((apiInfoRequest) {
+    widget.authenticationApi.checkStatus().then((apiInfoRequest) {
       String? strApiInfo = apiInfoRequest.value;
 
       if(apiInfoRequest.code == ResponseCode.success && strApiInfo != null) {

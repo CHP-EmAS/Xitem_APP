@@ -20,6 +20,7 @@ import 'package:xitem/widgets/SpecialEventList.dart';
 import 'package:xitem/widgets/UpcomingEventList.dart';
 import 'package:xitem/widgets/dialogs/BirthdayDialog.dart';
 import 'package:xitem/widgets/dialogs/StandardDialog.dart';
+import 'package:xitem/widgets/dialogs/UserDialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.initialSubPage, required this.userController, required this.calendarController, required this.holidayController, required this.birthdayController});
@@ -127,6 +128,11 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(7),
           child: CircleAvatar(
             backgroundImage: AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
+            child: GestureDetector(
+              onTap: () async {
+                UserDialog.profilePictureDialog(widget.userController.getAuthenticatedUser().avatar);
+              },
+            ),
           ),
         ),
         title: Text(
@@ -236,11 +242,8 @@ class _HomePageState extends State<HomePage> {
 
   void _onHomeMenuChoiceTapped(_MenuChoice choice) {
     if (choice.menuStatus == _AppMenuStatus.logout) {
-      StateController.safeLogout().then((responseCode) {
-        if (responseCode == ResponseCode.success) {
-          StateController.navigatorKey.currentState?.pushNamedAndRemoveUntil('/startup', (Route<dynamic> route) => false);
-        }
-      });
+      StateController.logOut();
+      StateController.navigatorKey.currentState?.pushNamedAndRemoveUntil('/startup', (Route<dynamic> route) => false);
     } else if (choice.menuStatus == _AppMenuStatus.profile) {
       StateController.navigatorKey.currentState?.pushNamed("/profile").then((_) => setState(() {}));
     } else if (choice.menuStatus == _AppMenuStatus.settings) {

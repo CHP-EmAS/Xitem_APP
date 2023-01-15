@@ -13,7 +13,6 @@ import 'package:xitem/utils/ApiResponseMapper.dart';
 import 'package:xitem/utils/AvatarImageProvider.dart';
 import 'package:xitem/utils/CustomScrollBehavior.dart';
 import 'package:xitem/widgets/EventColorsNamesAssigner.dart';
-import 'package:xitem/widgets/IconPicker.dart';
 import 'package:xitem/widgets/buttons/LoadingButton.dart';
 import 'package:xitem/widgets/dialogs/CalendarDialog.dart';
 import 'package:xitem/widgets/dialogs/PickerDialog.dart';
@@ -45,7 +44,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   bool _canJoin = true;
   bool _alert = true;
   int _currentColor = 0;
-  IconData _currentIcon = IconPicker.defaultIcons[0];
+  int _currentIconIndex = ThemeController.defaultCalendarIconIndex;
   Map<int, String> _colorLegend = {};
   bool _colorLegendIsOpen = false;
 
@@ -64,8 +63,8 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   bool _getLinkedCalendar() {
     _linkedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
 
-    _currentColor = _linkedCalendar?.color ?? 0;
-    _currentIcon = _linkedCalendar?.icon ?? Icons.error_outline_outlined;
+    _currentColor = _linkedCalendar?.colorIndex ?? 0;
+    _currentIconIndex = _linkedCalendar?.iconIndex ?? ThemeController.defaultCalendarIconIndex;
 
     _colorLegend = Map.of(_linkedCalendar?.colorLegend ?? {});
     _name.text = _linkedCalendar?.name ?? "Error";
@@ -247,14 +246,14 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
                         Expanded(
                           flex: 2,
                           child: IconButton(
-                            icon: Icon(_currentIcon),
+                            icon: Icon(ThemeController.getCalendarIcon(_currentIconIndex)),
                             color: Colors.white70,
                             iconSize: 40,
                             onPressed: () {
-                              PickerDialog.iconPickerDialog(_currentIcon).then((selectedIcon) {
+                              PickerDialog.iconPickerDialog(_currentIconIndex).then((selectedIcon) {
                                 if (selectedIcon != null) {
                                   setState(() {
-                                    _currentIcon = selectedIcon;
+                                    _currentIconIndex = selectedIcon;
                                   });
                                 }
                               });
@@ -714,7 +713,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
   }
 
   Future<bool> _saveLayout() async {
-    ResponseCode changeLayout = await widget.calendarController.changeCalendarLayout(widget.linkedCalendarID, _currentColor, _currentIcon);
+    ResponseCode changeLayout = await widget.calendarController.changeCalendarLayout(widget.linkedCalendarID, _currentColor, _currentIconIndex);
 
     if (changeLayout != ResponseCode.success) {
       String errorMessage;

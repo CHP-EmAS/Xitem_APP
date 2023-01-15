@@ -18,7 +18,7 @@ void main() async {
 class Xitem extends StatefulWidget {
   const Xitem({super.key});
 
-  static const String appVersion = "1.3.0";
+  static const String appVersion = "1.3.1";
   static final SettingController settingController = SettingController();
 
   @override

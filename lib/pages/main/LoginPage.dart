@@ -153,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<bool> _loginClick() async {
     if (_email.text == "" || _password.text == "") return false;
 
-    return await StateController.authenticateWithCredentials(_email.text, _password.text).then((loginResponse) {
+    return await StateController.authenticationController.authenticateWithCredentials(_email.text, _password.text).then((loginResponse) {
       if(loginResponse != ResponseCode.success) {
         setState(() {
           _errorMessage = "Authentifizierung fehlgeschlagen";

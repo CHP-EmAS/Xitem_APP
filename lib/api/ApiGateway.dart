@@ -37,7 +37,9 @@ class ApiGateway {
         apiInfo += " ${data["API_VERSION"]}";
       }
 
-      debugPrint("Connected with: $apiInfo");
+      if (data.containsKey("MIN_APP_VERSION")) {
+        //apiInfo += " ${data["MIN_APP_VERSION"]}";
+      }
 
       return ApiResponse(ResponseCode.success, apiInfo);
     }
@@ -100,19 +102,19 @@ class ApiGateway {
               "Laufzeitfehler", "Anfragen an den Server waren nach mehrmaligen Versuchen nicht erfolgreich. Bitte versuche es später erneut oder kontaktiere den Administrator");
 
           _retryCounter = 0;
-          StateController.safeLogout();
+          StateController.logOut();
         } else {
           if (_retryCounter > 0) {
             await Future.delayed(const Duration(milliseconds: 300));
           }
 
           _retryCounter++;
-          bool refreshSuccess = await _refreshToken();
+          bool refreshSuccess = await StateController.authenticationController.refreshAuthenticationToken();
 
           if (!refreshSuccess) {
             await StandardDialog.okDialog("Authentifizierungsfehler", "Dein Account konnte nicht verifiziert werden.\nUrsache: Verifizierung ist fehlerhaft.");
             _retryCounter = 0;
-            StateController.safeLogout();
+            StateController.logOut();
           } else {
             //recursive request
             Response retriedResponse = await sendRequest(relativeURL, type, requestData, optionalHeaders, includeAuthToken);
@@ -132,7 +134,7 @@ class ApiGateway {
 
     //include auth token if requested
     if (includeAuthToken) {
-      headers["auth-token"] = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
+      headers["auth-token"] = await StateController.authenticationController.getSecuredVariable(SecureVariable.authenticationToken);
     }
 
     //include security token if requested, this token must be requested in advance
@@ -163,15 +165,15 @@ class ApiGateway {
       switch (errorCode) {
         case ResponseCode.userBanned:
           await StandardDialog.okDialog("Authentifizierungsfehler", "Dein Account konnte nicht verifiziert werden.\nUrsache: Account gebannt.");
-          StateController.safeLogout();
+          StateController.logOut();
           break;
         case ResponseCode.passwordChanged:
           await StandardDialog.okDialog("Authentifizierungsfehler", "Dein Account konnte nicht verifiziert werden.\nUrsache: Passwort wurde geändert.");
-          StateController.safeLogout();
+          StateController.logOut();
           break;
         case ResponseCode.tokenRequired:
           await StandardDialog.okDialog("Authentifizierungsfehler", "Dein Account konnte nicht verifiziert werden.\nUrsache: Verifizierung ist fehlerhaft.");
-          StateController.safeLogout();
+          StateController.logOut();
           break;
         default:
           //No errors that interest us at this level
@@ -182,42 +184,11 @@ class ApiGateway {
     return false;
   }
 
-  Future<bool> _refreshToken() async {
-    debugPrint("Refreshing Auth-Token..");
-
-    String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
-    String refreshToken = await StateController.getSecuredVariable(SecureVariable.refreshToken);
-
-    if (authToken.isEmpty || refreshToken.isEmpty) {
-      debugPrint("Refresh-Error: authToken or refreshToken not found!");
-      return false;
-    }
-
-    try {
-      Map<String, String> headers = {"Content-type": "application/json"};
-      headers["auth-token"] = authToken;
-      headers["refresh-token"] = refreshToken;
-      Response response = await get(Uri.parse("$apiHost/auth/refresh"), headers: headers);
-
-      if (response.statusCode == 200) {
-        if (response.headers.containsKey("auth-token")) {
-          await StateController.setAuthToken(response.headers["auth-token"] as String);
-          debugPrint("Auth-Token refreshed!");
-          return true;
-        }
-      }
-
-      return false;
-    } catch (error) {
-      return false;
-    }
-  }
-
   Future<String> _getSecurityToken() async {
     debugPrint("Requesting Security-Token..");
 
-    String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
-    String refreshToken = await StateController.getSecuredVariable(SecureVariable.refreshToken);
+    String authToken = await StateController.authenticationController.getSecuredVariable(SecureVariable.authenticationToken);
+    String refreshToken = await StateController.authenticationController.getSecuredVariable(SecureVariable.refreshToken);
 
     if (authToken.isEmpty || refreshToken.isEmpty) {
       debugPrint("Request-Security-Error: authToken or refreshToken not found!");

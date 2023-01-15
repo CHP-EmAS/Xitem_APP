@@ -26,10 +26,10 @@ class CalendarApi extends ApiGateway {
             //final bool canCreateEvents = calendar["can_create_events"];
             //final bool canEditEvents = calendar["can_edit_events"];
             final int color = calendar["color"];
-            final int iconPoint = calendar["icon"];
+            final int icon = calendar["icon"];
             final String rawColorLegend = calendar["calendarObject"]["raw_color_legend"];
 
-            LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, IconData(iconPoint, fontFamily: 'MaterialIcons'), rawColorLegend);
+            LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, icon, rawColorLegend);
 
             assocCalendars.add(newCalendar);
           }
@@ -167,10 +167,10 @@ class CalendarApi extends ApiGateway {
           //final bool canCreateEvents = calendar["can_create_events"];
           //final bool canEditEvents = calendar["can_edit_events"];
           final int color = calendar["color"];
-          final int iconPoint = calendar["icon"];
+          final int icon = calendar["icon"];
           final String rawColorLegend = calendar["calendarObject"]["raw_color_legend"];
 
-          LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, IconData(iconPoint, fontFamily: 'MaterialIcons'), rawColorLegend);
+          LoadedCalendarData newCalendar = LoadedCalendarData(id, fullName, canJoin, creationDate, color, icon, rawColorLegend);
 
           return ApiResponse(ResponseCode.success, newCalendar);
         }

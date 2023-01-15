@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:xitem/controllers/CalendarController.dart';
+import 'package:xitem/controllers/NoteController.dart';
 import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/controllers/UserController.dart';
@@ -39,10 +40,10 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
     _linkedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
     _canCreateEvents = _linkedCalendar?.calendarMemberController.getCalendarMember(widget.userController.getAuthenticatedUser().id)?.canCreateEvents ?? false;
 
-    loadNotes();
+    _loadNotes();
   }
 
-  void loadNotes() {
+  void _loadNotes() {
     _pinnedNotes.clear();
     _unpinnedNotes.clear();
 
@@ -69,7 +70,7 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
 
     _linkedCalendar = widget.calendarController.getCalendar(widget.linkedCalendarID);
     setState(() {
-      loadNotes();
+      _loadNotes();
     });
     _refreshController.refreshCompleted();
   }
@@ -214,7 +215,7 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
     }
 
     setState(() {
-      loadNotes();
+      _loadNotes();
     });
 
     StateController.navigatorKey.currentState?.pop();
@@ -258,7 +259,54 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
     }
 
     setState(() {
-      loadNotes();
+      _loadNotes();
+    });
+
+    StateController.navigatorKey.currentState?.pop();
+  }
+
+  void _createNote() async {
+    NoteController? noteController = _linkedCalendar?.noteController;
+    if (noteController == null) {
+      return;
+    }
+
+    NoteData? noteData = await NoteDialog.notePopup(null, true);
+    if (noteData == null) return;
+
+    StandardDialog.loadingDialog("Erstelle Notiz...");
+
+    ResponseCode createNote = await noteController.createNote(noteData.title, noteData.content, noteData.pinned,  noteData.color).catchError((e) {
+      StateController.navigatorKey.currentState?.pop();
+      return ResponseCode.internalError;
+    });
+
+    if (createNote != ResponseCode.success) {
+      String errorMessage;
+
+      switch (createNote) {
+        case ResponseCode.missingArgument:
+          errorMessage = "Bitte füllen Sie alle Pflichtfelder aus.";
+          break;
+        case ResponseCode.invalidTitle:
+          errorMessage = "Unzulässiger Titel. Titel muss mindestens 3 Zeichen lang sein.";
+          break;
+        case ResponseCode.accessForbidden:
+        case ResponseCode.insufficientPermissions:
+          errorMessage = "Du hast nicht die nötigen Berechtigungen um ein Event in diesem Kalender zu erstellen. Bitte wende dich an den Kalenderadministrator";
+          break;
+        default:
+          errorMessage = "Beim Erstellen der Notiz ist ein unerwarteter Fehler aufgetreten, versuch es später erneut.";
+          break;
+      }
+
+      StateController.navigatorKey.currentState?.pop();
+      await StandardDialog.okDialog("Notiz konnte nicht erstellt werden!", errorMessage);
+      return;
+    }
+
+    setState(() {
+      _loadNotes();
     });
 
     StateController.navigatorKey.currentState?.pop();
@@ -270,7 +318,7 @@ class _NotesPageState extends State<NotesPage> with SingleTickerProviderStateMix
             tooltip: "Notiz erstellen",
             backgroundColor: ThemeController.activeTheme().actionButtonColor,
             onPressed: () {
-              //_createNote();
+              _createNote();
             },
             child: Icon(
               Icons.sticky_note_2_rounded,

@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
-import 'package:xitem/api/AuthenticationApi.dart';
 import 'package:xitem/api/CalendarApi.dart';
 import 'package:xitem/api/CalendarMemberApi.dart';
 import 'package:xitem/api/EventApi.dart';
 import 'package:xitem/api/NoteApi.dart';
+import 'package:xitem/controllers/AuthenticationController.dart';
 import 'package:xitem/controllers/CalendarMemberController.dart';
 import 'package:xitem/controllers/EventController.dart';
 import 'package:xitem/interfaces/CalendarApiInterfaces.dart';
@@ -15,10 +15,10 @@ import 'NoteController.dart';
 
 class CalendarController {
 
-  CalendarController(this._calendarApi, this._authenticationApi, this._eventApi, this._calendarMemberApi, this._noteApi);
+  CalendarController(this._calendarApi, this._authenticationController, this._eventApi, this._calendarMemberApi, this._noteApi);
 
   final CalendarApi _calendarApi;
-  final AuthenticationApi _authenticationApi;
+  final AuthenticationController _authenticationController;
   final EventApi _eventApi;
   final CalendarMemberApi _calendarMemberApi;
   final NoteApi _noteApi;
@@ -110,7 +110,7 @@ class CalendarController {
     return reloadCalendar.code;
   }
 
-  Future<ApiResponse<String>> createCalendar(String name, String password, bool canJoin, int color, IconData icon) async {
+  Future<ApiResponse<String>> createCalendar(String name, String password, bool canJoin, int color, int icon) async {
     if(!_isInitialized) {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
@@ -136,7 +136,7 @@ class CalendarController {
     return ApiResponse(ResponseCode.success, "${newCalendar.name}#${newCalendar.hash}");
   }
 
-  Future<ResponseCode> joinCalendar(String hashName, String password, int color, IconData icon) async {
+  Future<ResponseCode> joinCalendar(String hashName, String password, int color, int icon) async {
     if(!_isInitialized) {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
@@ -159,7 +159,7 @@ class CalendarController {
     return ResponseCode.success;
   }
 
-  Future<ResponseCode> acceptCalendarInvitation(String invToken, int color, IconData icon) async {
+  Future<ResponseCode> acceptCalendarInvitation(String invToken, int color, int icon) async {
     if(!_isInitialized) {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
@@ -187,7 +187,7 @@ class CalendarController {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
 
-    if(await _authenticationApi.checkHashPassword(userPassword) != ResponseCode.success) {
+    if(await _authenticationController.compareHashPassword(userPassword) != ResponseCode.success) {
       return ResponseCode.wrongPassword;
     }
 
@@ -207,7 +207,7 @@ class CalendarController {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
 
-    if(await _authenticationApi.checkHashPassword(userPassword) != ResponseCode.success) {
+    if(await _authenticationController.compareHashPassword(userPassword) != ResponseCode.success) {
       return ResponseCode.wrongPassword;
     }
 
@@ -222,7 +222,7 @@ class CalendarController {
     return ResponseCode.success;
   }
 
-  Future<ResponseCode> changeCalendarLayout(String calendarID, int color, IconData icon) async {
+  Future<ResponseCode> changeCalendarLayout(String calendarID, int color, int icon) async {
     if(!_isInitialized) {
       throw AssertionError("CalendarController must be initialized before it can be accessed!");
     }
@@ -309,7 +309,7 @@ class CalendarController {
 
   Calendar _createCalendarFromRawData(LoadedCalendarData data) {
     EventController newEventController = EventController(_eventApi);
-    CalendarMemberController newCalendarMemberController = CalendarMemberController(_calendarMemberApi, _authenticationApi);
+    CalendarMemberController newCalendarMemberController = CalendarMemberController(_calendarMemberApi, _authenticationController);
     NoteController newNoteController = NoteController(_noteApi);
 
     return Calendar(
@@ -320,8 +320,8 @@ class CalendarController {
         fullName: data.fullName,
         canJoin: data.canJoin,
         creationDate: data.creationDate,
-        color: data.color,
-        icon: data.icon,
+        colorIndex: data.color,
+        iconIndex: data.icon,
         colorLegend: data.colorLegend
     );
   }

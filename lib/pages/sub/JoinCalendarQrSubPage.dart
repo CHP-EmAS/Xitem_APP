@@ -2,7 +2,6 @@ import 'package:xitem/controllers/CalendarController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/widgets/dialogs/PickerDialog.dart';
 import 'package:xitem/widgets/buttons/LoadingButton.dart';
-import 'package:xitem/widgets/IconPicker.dart';
 import 'package:flutter/material.dart';
 
 class JoinCalendarQrSubPage extends StatefulWidget {
@@ -16,8 +15,8 @@ class JoinCalendarQrSubPage extends StatefulWidget {
 
 class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
   bool _alert = true;
-  int _color = ThemeController.defaultEventColorIndex;
-  IconData _icon = IconPicker.defaultIcons[0];
+  int _currentColorIndex = ThemeController.defaultEventColorIndex;
+  int _currentIconIndex = ThemeController.defaultCalendarIconIndex;
 
   @override
   void initState() {
@@ -59,7 +58,7 @@ class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
                     flex: 2,
                     child: MaterialButton(
                       onPressed: _showColorPicker,
-                      color: ThemeController.getEventColor(_color),
+                      color: ThemeController.getEventColor(_currentColorIndex),
                       textColor: Colors.white,
                       padding: const EdgeInsets.all(16),
                       shape: const CircleBorder(),
@@ -84,7 +83,7 @@ class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
                   Expanded(
                     flex: 2,
                     child: IconButton(
-                      icon: Icon(_icon),
+                      icon: Icon(ThemeController.getCalendarIcon(_currentIconIndex)),
                       color: Colors.white70,
                       iconSize: 40,
                       onPressed: _showIconPicker,
@@ -204,20 +203,20 @@ class _JoinCalendarQrSubPageState extends State<JoinCalendarQrSubPage> {
   }
 
   void _showColorPicker() {
-    PickerDialog.eventColorPickerDialog(initialColor: _color).then((selectedColor) {
+    PickerDialog.eventColorPickerDialog(initialColor: _currentColorIndex).then((selectedColor) {
       if (selectedColor != null) {
         setState(() {
-          _color = selectedColor;
+          _currentColorIndex = selectedColor;
         });
       }
     });
   }
 
   void _showIconPicker() {
-    PickerDialog.iconPickerDialog(_icon).then((selectedIcon) {
+    PickerDialog.iconPickerDialog(_currentIconIndex).then((selectedIcon) {
       if (selectedIcon != null) {
         setState(() {
-          _icon = selectedIcon;
+          _currentIconIndex = selectedIcon;
         });
       }
     });

@@ -36,13 +36,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   final ImagePicker picker = ImagePicker();
   final ImageCropper cropper = ImageCropper();
+  File? _croppedProfilePicture;
 
   @override
   void initState() {
     _name.text = widget.userController.getAuthenticatedUser().name;
     _birthday = widget.userController.getAuthenticatedUser().birthday;
 
-    if(_birthday != null) {
+    if (_birthday != null) {
       _birthdayText.text = birthdayFormat.format(_birthday!);
     }
 
@@ -159,106 +160,122 @@ class _EditProfilePageState extends State<EditProfilePage> {
         backgroundColor: ThemeController.activeTheme().backgroundColor,
         body: Center(
             child: ListView(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 40, 30, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(30, 40, 30, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Center(
+                    child: GestureDetector(
+                      onTap: _changeProfilePicture,
+                      child: CircleAvatar(
+                        backgroundImage: _croppedProfilePicture != null ? FileImage(_croppedProfilePicture!) : AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
+                        radius: 80,
+                        child: Icon(Icons.add_a_photo, size: 50, color: ThemeController.activeTheme().iconColor),
+                      ),
+                    ),
+                  ),
+                  Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
+                  Text(
+                    "Account Daten ändern",
+                    style: TextStyle(
+                      color: ThemeController.activeTheme().headlineColor,
+                      letterSpacing: 2,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  nameField,
+                  const SizedBox(height: 20),
+                  Row(
                     children: <Widget>[
-                      Center(
-                        child: GestureDetector(
-                          onTap: _changeProfilePicture,
-                          child: CircleAvatar(
-                            backgroundImage: AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
-                            radius: 60,
-                            child: Icon(Icons.add_a_photo, size: 50, color: ThemeController.activeTheme().iconColor),
+                      Expanded(flex: 9, child: birthdayField),
+                      Expanded(
+                        flex: 1,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
                           ),
+                          iconSize: 30,
+                          onPressed: () {
+                            _birthday = null;
+                            _birthdayText.clear();
+                          },
                         ),
-                      ),
-                      Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
-                      Text(
-                        "Account Daten ändern",
-                        style: TextStyle(
-                          color: ThemeController.activeTheme().headlineColor,
-                          letterSpacing: 2,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      nameField,
-                      const SizedBox(height: 20),
-                      Row(
-                        children: <Widget>[
-                          Expanded(flex: 9, child: birthdayField),
-                          Expanded(
-                            flex: 1,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                              ),
-                              iconSize: 30,
-                              onPressed: () {
-                                _birthday = null;
-                                _birthdayText.clear();
-                              },
-                            ),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      saveProfileButton,
-                      Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
-                      Text(
-                        "Passwort ändern",
-                        style: TextStyle(
-                          color: ThemeController.activeTheme().headlineColor,
-                          letterSpacing: 2,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      oldPasswordField,
-                      const SizedBox(height: 20),
-                      newPasswordField,
-                      const SizedBox(height: 20),
-                      repeatPasswordField,
-                      const SizedBox(height: 20),
-                      changePasswordButton,
-                      const SizedBox(height: 20),
+                      )
                     ],
                   ),
-                ),
-              ],
-            )));
+                  const SizedBox(height: 20),
+                  saveProfileButton,
+                  Divider(height: 40, color: ThemeController.activeTheme().dividerColor),
+                  Text(
+                    "Passwort ändern",
+                    style: TextStyle(
+                      color: ThemeController.activeTheme().headlineColor,
+                      letterSpacing: 2,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  oldPasswordField,
+                  const SizedBox(height: 20),
+                  newPasswordField,
+                  const SizedBox(height: 20),
+                  repeatPasswordField,
+                  const SizedBox(height: 20),
+                  changePasswordButton,
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
+        )));
   }
 
   Future<bool> _saveProfile() async {
     FocusScope.of(context).unfocus();
 
-    return await widget.userController.changeUserInformation(_name.text, _birthday).then((changeUser) async {
-      if (changeUser != ResponseCode.success) {
+    if(_croppedProfilePicture != null) {
+      ResponseCode changeAvatar = await widget.userController.changeAvatar(_croppedProfilePicture!);
+      if (changeAvatar != ResponseCode.success) {
         String errorMessage;
-
-        switch(changeUser) {
-          case ResponseCode.shortName:
-            errorMessage = "Der Name muss mindestens 3 Zeichen lang sein.";
-            break;
-          case ResponseCode.invalidDate:
-            errorMessage = "Der angegebene Geburtstag ist nicht gültig.";
+        switch (changeAvatar) {
+          case ResponseCode.payloadTooLarge:
+            errorMessage = "Das angegebene Profilbild ist zu groß!";
             break;
           default:
-            errorMessage = "Die Änderungen konnten nicht gespeichert werden, versuch es später erneut.";
-            break;
+            errorMessage = "Es ist ein Fehler während der Übertragung des Profilbildes aufgetreten, bitte versuch es später erneut.";
         }
 
-        await StandardDialog.okDialog("Änderungen konnten nicht gespeichert werden!", errorMessage);
+        StandardDialog.okDialog("Profilbild konnte nicht geändert werden!", errorMessage);
         return false;
       }
+    }
 
-      await StandardDialog.okDialog("Änderungen gespeichert", "Die Änderungen wurden erfolgreich an Xitem übermittlet");
-      return true;
-    });
+    ResponseCode changeUser = await widget.userController.changeUserInformation(_name.text, _birthday);
+
+    if (changeUser != ResponseCode.success) {
+      String errorMessage;
+
+      switch (changeUser) {
+        case ResponseCode.shortName:
+          errorMessage = "Der Name muss mindestens 3 Zeichen lang sein.";
+          break;
+        case ResponseCode.invalidDate:
+          errorMessage = "Der angegebene Geburtstag ist nicht gültig.";
+          break;
+        default:
+          errorMessage = "Die Änderungen konnten nicht gespeichert werden, versuch es später erneut.";
+          break;
+      }
+
+      await StandardDialog.okDialog("Änderungen konnten nicht gespeichert werden!", errorMessage);
+      return false;
+    }
+
+    return true;
   }
 
   Future<bool> _changePassword() async {
@@ -270,7 +287,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (changePassword != ResponseCode.success) {
         String errorMessage;
 
-        switch(changePassword) {
+        switch (changePassword) {
           case ResponseCode.missingArgument:
             errorMessage = "Bitte füllen Sie alle Pflichtfelder aus.";
             break;
@@ -292,46 +309,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
 
       await StandardDialog.okDialog("Passwort geändert", "Die Änderungen wurden erfolgreich an Xitem übermittelt. Bitte melde dich erneut an.");
-      StateController.safeLogout();
+      StateController.logOut();
+      StateController.navigatorKey.currentState?.pushNamedAndRemoveUntil('/startup', (Route<dynamic> route) => false);
       return true;
     });
   }
 
   void _changeProfilePicture() async {
-    File? pickedImage = await _pickImage();
-    if(pickedImage == null) {
+    XFile? pickedImage = await _pickImage();
+    if (pickedImage == null) {
       return;
     }
 
-    pickedImage = await _cropImage(pickedImage);
-    if(pickedImage == null) {
-      StandardDialog.okDialog("Profilbild konnte nicht geändert werden!", "Es ist ein Fehler während der Bildauswahl aufgetreten, bitte versuch es erneut.");
-      return;
+    File? croppedImage = await _cropImage(pickedImage);
+    if (croppedImage != null) {
+      setState(() {
+        _croppedProfilePicture = croppedImage;
+      });
     }
-
-    StandardDialog.loadingDialog("Speichere Profilbild...");
-
-    ResponseCode changeAvatar = await widget.userController.changeAvatar(pickedImage);
-
-    StateController.navigatorKey.currentState?.pop();
-
-    if (changeAvatar != ResponseCode.success) {
-      String errorMessage;
-
-      switch(changeAvatar) {
-        case ResponseCode.payloadTooLarge:
-          errorMessage = "Das angegebene Profilbild ist zu groß!";
-          break;
-        default:
-          errorMessage = "Es ist ein Fehler während der Übertragung aufgetreten, bitte versuch es später erneut.";
-      }
-
-      StandardDialog.okDialog("Profilbild konnte nicht geändert werden!", errorMessage);
-      return;
-    }
-
-    setState(() {});
-    StandardDialog.okDialog("Profilbild gespeichert", "Dein Profilbild wurde erfolgreich an Xitem übermittelt.");
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -344,8 +339,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         initialDate: DateTime.now(),
         firstDate: DateTime(1901, 1),
         lastDate: DateTime.now(),
-        locale: const Locale('de', 'DE')
-    );
+        locale: const Locale('de', 'DE'));
 
     if (picked != null && picked != _birthday) {
       _birthday = picked;
@@ -355,30 +349,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<File?> _pickImage() async {
-    final XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedImage == null) {
-      return null;
-    }
-
-    return File(pickedImage.path);
+  Future<XFile?> _pickImage() async {
+    return await picker.pickImage(source: ImageSource.gallery);
   }
 
-  Future<File?> _cropImage(File imageToCrop) async {
-    final CroppedFile? croppedFile = await cropper.cropImage(
+  Future<File?> _cropImage(XFile imageToCrop) async {
+    final CroppedFile? croppedFile = await ImageCropper().cropImage(
       sourcePath: imageToCrop.path,
+      compressFormat: ImageCompressFormat.png,
+      uiSettings: [
+        AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
+        IOSUiSettings(
+          title: 'Profilbild anpassen',
+        ),
+      ],
       aspectRatioPresets: [
         CropAspectRatioPreset.square,
       ],
-      uiSettings: [
-        AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
-        IOSUiSettings(title: 'Profilbild anpassen',),
-      ],
-      compressFormat: ImageCompressFormat.png,
     );
 
-    if(croppedFile == null) {
+    if (croppedFile == null) {
       return null;
     }
 

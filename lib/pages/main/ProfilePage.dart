@@ -26,7 +26,7 @@ class ProfilePage extends StatelessWidget {
         leading: BackButton(
           color: ThemeController.activeTheme().iconColor,
           onPressed: () {
-            StateController.navigatorKey.currentState?.pop(context);
+            StateController.navigatorKey.currentState?.pop();
           },
         ),
         title: Text(
@@ -40,9 +40,9 @@ class ProfilePage extends StatelessWidget {
         elevation: 3,
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.settings, color: ThemeController.activeTheme().iconColor, size: 30),
-            onPressed: () {
-              StateController.navigatorKey.currentState?.pushNamed('/editProfile');
+            icon: Icon(Icons.edit, color: ThemeController.activeTheme().iconColor, size: 30),
+            onPressed: () async {
+              StateController.navigatorKey.currentState?.pushNamed('/editProfile').then((_) => StateController.navigatorKey.currentState?.pop());
             },
           ),
         ],
@@ -56,7 +56,7 @@ class ProfilePage extends StatelessWidget {
             Center(
               child: CircleAvatar(
                 backgroundImage: AvatarImageProvider.get(_authenticatedUser.avatar),
-                radius: 60,
+                radius: 80,
               ),
             ),
             Divider(height: 40, color: ThemeController.activeTheme().dividerColor),

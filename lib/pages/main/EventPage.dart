@@ -166,8 +166,8 @@ class _EventPageState extends State<EventPage> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Icon(
-                          element.icon,
-                          color: ThemeController.getEventColor(element.color),
+                          ThemeController.getCalendarIcon(element.iconIndex),
+                          color: ThemeController.getEventColor(element.colorIndex),
                           size: 30,
                         ),
                         const SizedBox(

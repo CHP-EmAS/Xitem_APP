@@ -135,7 +135,7 @@ class UserApi extends ApiGateway {
     avatarImage = File(avatarImage.path.replaceAll(basename(avatarImage.path), "out.png"))..writeAsBytesSync(encodePng(image));
     request.files.add(MultipartFile.fromBytes("avatar", avatarImage.readAsBytesSync(), filename: basename(avatarImage.path), contentType: MediaType("image", "png")));
 
-    String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
+    String authToken = await StateController.authenticationController.getSecuredVariable(SecureVariable.authenticationToken);
     if (authToken.isEmpty) {
       return ResponseCode.unknown;
     }

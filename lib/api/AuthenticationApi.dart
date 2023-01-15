@@ -2,56 +2,68 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:crypto/crypto.dart';
 import 'package:xitem/api/ApiGateway.dart';
 import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/interfaces/ApiInterfaces.dart';
 import 'package:xitem/utils/ApiResponseMapper.dart';
-import 'package:xitem/utils/SecureStorage.dart';
 
 class AuthenticationApi extends ApiGateway {
 
-  Future<ResponseCode> checkHashPassword(String password) async {
-    String storedPassword = await StateController.getSecuredVariable(SecureVariable.hashedPassword);
+  Future<ApiResponse<String>> requestUserIdByToken(String authenticationToken) async {
+    debugPrint("Requesting User ID by Authentication Token...");
 
-    if (storedPassword.isEmpty) {
-      debugPrint("Stored password not found!");
-      return ResponseCode.unknown;
+    if (authenticationToken.isEmpty) {
+      debugPrint("Login-Error: Authentication Token not found!");
+      return ApiResponse(ResponseCode.tokenRequired);
     }
 
-    var passwordBytes = utf8.encode(password);
-    String hash = sha256.convert(passwordBytes).toString();
-
-    if (storedPassword == hash) {
-      return ResponseCode.success;
-    } else {
-      return ResponseCode.wrongPassword;
-    }
-  }
-
-  Future<ApiResponse<String>> requestUserIdByToken() async {
     try {
-      String authToken = await StateController.getSecuredVariable(SecureVariable.authenticationToken);
-      String refreshToken = await StateController.getSecuredVariable(SecureVariable.refreshToken);
+      Map<String, String> headers = {"Content-type": "application/json"};
+      headers["auth-token"] = authenticationToken;
 
-      if (authToken.isEmpty || refreshToken.isEmpty) {
-        return ApiResponse(ResponseCode.tokenRequired);
-      }
-
-      Response response = await sendRequest("/auth/id", RequestType.get, null, null, true);
+      Response response = await get(Uri.parse("${ApiGateway.apiHost}/auth/id"), headers: headers);
 
       Map<String, dynamic> responseData = jsonDecode(response.body);
-
       if (response.statusCode == 200) {
         if (responseData.containsKey("user_id")) {
           return ApiResponse(ResponseCode.success, responseData["user_id"].toString());
         }
       }
+
+      return ApiResponse(extractResponseCode(response));
     } catch (error) {
-      debugPrint("local login: $error");
+      debugPrint("Login-Error: $error");
     }
 
-    return ApiResponse(ResponseCode.unknown);
+    return ApiResponse(ResponseCode.internalError);
+  }
+
+  Future<String?> getRefreshedAuthenticationToken(String authenticationToken, String refreshToken) async {
+    debugPrint("Refreshing Auth-Token..");
+
+    if (authenticationToken.isEmpty || refreshToken.isEmpty) {
+      debugPrint("Refresh-Error: authToken or refreshToken not found!");
+      return null;
+    }
+
+    try {
+      Map<String, String> headers = {"Content-type": "application/json"};
+      headers["auth-token"] = authenticationToken;
+      headers["refresh-token"] = refreshToken;
+
+      Response response = await get(Uri.parse("${ApiGateway.apiHost}/auth/refresh"), headers: headers);
+
+      if (response.statusCode == 200) {
+        if (response.headers.containsKey("auth-token")) {
+          return response.headers["auth-token"] as String;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      debugPrint("Error while refreshing Authentication Token: $error");
+      return null;
+    }
   }
 
   Future<ApiResponse<RemoteAuthenticationData>> remoteLogin(UserLoginRequest requestData) async {
@@ -68,19 +80,19 @@ class AuthenticationApi extends ApiGateway {
         if (response.headers.containsKey("auth-token")) {
           authToken = response.headers["auth-token"];
         } else {
-          debugPrint("Login-Error: No auth-token found");
+          debugPrint("Login-Error: No auth-token found in response");
         }
 
         if (response.headers.containsKey("refresh-token")) {
           refreshToken = response.headers["refresh-token"];
         } else {
-          debugPrint("Login-Error: No refresh-token found");
+          debugPrint("Login-Error: No refresh-token found in response");
         }
 
         if (responseData.containsKey("user_id")) {
           userID = responseData["user_id"];
         } else {
-          debugPrint("Login-Error: No user ID found");
+          debugPrint("Login-Error: No user ID found in response");
         }
 
         if(authToken == null || refreshToken == null || userID == null) {
@@ -103,7 +115,8 @@ class AuthenticationApi extends ApiGateway {
         return ApiResponse(extractResponseCode(response));
       }
     } catch (error) {
-      return ApiResponse(ResponseCode.unknown);
+      debugPrint(error.toString());
+      return ApiResponse(ResponseCode.internalError);
     }
   }
 
@@ -118,7 +131,7 @@ class AuthenticationApi extends ApiGateway {
       return extractResponseCode(response);
     } catch (error) {
       debugPrint(error.toString());
-      return ResponseCode.unknown;
+      return ResponseCode.internalError;
     }
   }
 
@@ -126,14 +139,14 @@ class AuthenticationApi extends ApiGateway {
     try {
       Response response = await sendRequest("/auth/change-password", RequestType.post, requestData, null, true);
 
-      if (response.statusCode == 200) {
-        return ResponseCode.success;
+      if (response.statusCode != 200) {
+        return extractResponseCode(response);
       }
 
-      return extractResponseCode(response);
+      return ResponseCode.success;
     } catch (error) {
       debugPrint(error.toString());
-      return ResponseCode.unknown;
+      return ResponseCode.internalError;
     }
   }
 
@@ -141,14 +154,14 @@ class AuthenticationApi extends ApiGateway {
     Response response = await sendRequest("/auth/reset_password/$email", RequestType.post);
 
     if (response.statusCode != 200) {
-      return ResponseCode.unknown;
+      return extractResponseCode(response);
     }
 
     return ResponseCode.success;
   }
 
   Future<ResponseCode> requestProfileInformationEmail(final String userID, String userPassword) async {
-    ResponseCode checkPassword = await checkHashPassword(userPassword);
+    ResponseCode checkPassword = await StateController.authenticationController.compareHashPassword(userPassword);
 
     if (checkPassword != ResponseCode.success) {
       return checkPassword;
@@ -157,14 +170,14 @@ class AuthenticationApi extends ApiGateway {
     Response response = await sendRequest("/user/$userID/infomail", RequestType.post, null, null, true, false);
 
     if (response.statusCode != 200) {
-      return ResponseCode.unknown;
+      return extractResponseCode(response);
     }
 
     return ResponseCode.success;
   }
 
   Future<ResponseCode> requestProfileDeletionEmail(final String userID, String userPassword) async {
-    ResponseCode checkPassword = await checkHashPassword(userPassword);
+    ResponseCode checkPassword = await StateController.authenticationController.compareHashPassword(userPassword);
 
     if (checkPassword != ResponseCode.success) {
       return checkPassword;
@@ -173,7 +186,7 @@ class AuthenticationApi extends ApiGateway {
     Response response = await sendRequest("/user/$userID/deletion_request", RequestType.post, null, null, true, true);
 
     if (response.statusCode != 200) {
-      return ResponseCode.unknown;
+      return extractResponseCode(response);
     }
 
     return ResponseCode.success;

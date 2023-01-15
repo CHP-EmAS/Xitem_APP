@@ -2,7 +2,6 @@ import 'package:xitem/controllers/BirthdayController.dart';
 import 'package:xitem/controllers/CalendarController.dart';
 import 'package:xitem/controllers/EventController.dart';
 import 'package:xitem/controllers/HolidayController.dart';
-import 'package:xitem/controllers/SettingController.dart';
 import 'package:xitem/controllers/StateController.dart';
 import 'package:xitem/controllers/ThemeController.dart';
 import 'package:xitem/controllers/UserController.dart';
@@ -222,8 +221,8 @@ class _CalendarPageState extends State<CalendarPage> with TickerProviderStateMix
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Icon(
-              displayedCalendar.icon,
-              color: ThemeController.getEventColor(displayedCalendar.color),
+              ThemeController.getCalendarIcon(displayedCalendar.iconIndex),
+              color: ThemeController.getEventColor(displayedCalendar.colorIndex),
               size: 32,
             ),
             const SizedBox(
