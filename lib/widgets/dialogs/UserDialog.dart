@@ -97,7 +97,7 @@ class UserDialog {
     if(buildContext == null) {
       return ;
     }
-    
+
     return showDialog(
         context: buildContext,
         builder: (BuildContext context) {
@@ -108,8 +108,9 @@ class UserDialog {
             child: Dialog(
               elevation: 0,
               backgroundColor: Colors.transparent,
-              child: Container(
-                decoration: BoxDecoration(image: DecorationImage(image: AvatarImageProvider.get(avatar), fit: BoxFit.scaleDown)),
+              child: CircleAvatar(
+                backgroundImage: AvatarImageProvider.get(avatar),
+                radius: 160,
               ),
             ),
           );

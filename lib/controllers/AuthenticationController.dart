@@ -52,7 +52,7 @@ class AuthenticationController {
     return ResponseCode.success;
   }
 
-  Future<ResponseCode> authenticateWithSecuredToken() async {
+  Future<ResponseCode> authenticateWithSecuredToken({bool tryRefresh = true}) async {
     String authToken = await _secureStorage.readVariable(SecureVariable.authenticationToken);
 
     if(authToken.isEmpty) {
@@ -63,6 +63,15 @@ class AuthenticationController {
 
     String? userID = userIdRequest.value;
     if(userIdRequest.code != ResponseCode.success) {
+
+      if(userIdRequest.code == ResponseCode.tokenExpired && tryRefresh) {
+        debugPrint("Authentication Token is expired, cant login with Authentication Token. Refreshing Token...");
+        if(await refreshAuthenticationToken()) {
+          return authenticateWithSecuredToken(tryRefresh: false);
+        }
+      }
+
+      debugPrint("Authentication with Token failed with Code: ${userIdRequest.code}");
       return userIdRequest.code;
     } else if(userID == null) {
       return ResponseCode.internalError;

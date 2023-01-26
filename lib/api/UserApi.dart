@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart' as material;
-import 'package:http_parser/http_parser.dart';
-import 'package:image/image.dart';
-import 'package:path/path.dart';
 import 'package:http/http.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:xitem/api/ApiGateway.dart';
 import 'package:xitem/controllers/StateController.dart';
@@ -23,7 +21,7 @@ class UserApi extends ApiGateway {
 
     Map<String, dynamic> data = jsonDecode(response.body);
 
-    String name = "ERROR", email = "ERROR", role = "ERROR";
+    String name = "ERROR", email = "ERROR", role = "ERROR", avatarHash = "";
     DateTime? birthday;
     DateTime registeredAt = DateTime.now();
 
@@ -45,6 +43,10 @@ class UserApi extends ApiGateway {
       }
     }
 
+    if (data["User"].containsKey("profile_picture_hash")) {
+      avatarHash = data["User"]["profile_picture_hash"].toString();
+    }
+
     if (data["User"].containsKey("registered_at")) {
       registeredAt = DateTime.parse(data["User"]["registered_at"].toString());
     }
@@ -53,16 +55,9 @@ class UserApi extends ApiGateway {
       if (data["User"]["roleObject"].containsKey("role")) role = data["User"]["roleObject"]["role"].toString();
     }
 
-    ApiResponse loadedAvatar = await loadAvatar(userID);
+    ApiResponse<File> loadedAvatar = await loadAvatar(userID, avatarHash);
 
-    File? avatar;
-    if (loadedAvatar.code != ResponseCode.success) {
-      material.debugPrint("Avatar could not be loaded!");
-    } else {
-      avatar = loadedAvatar.value as File;
-    }
-
-    return ApiResponse(ResponseCode.success, AuthenticatedUser(User(userID, name, birthday, role, avatar), email, registeredAt));
+    return ApiResponse(ResponseCode.success, AuthenticatedUser(User(userID, name, birthday, role, loadedAvatar.value), email, registeredAt));
   }
 
   Future<ApiResponse<User>> loadPublicUserInformation(final String userID) async {
@@ -78,7 +73,7 @@ class UserApi extends ApiGateway {
       return ApiResponse(ResponseCode.userNotFound);
     }
 
-    String name = "-", role = "-";
+    String name = "-", role = "-", avatarHash = "";
     DateTime? birthday;
 
     if (data["User"].containsKey("name")) name = data["User"]["name"].toString();
@@ -95,45 +90,45 @@ class UserApi extends ApiGateway {
       }
     }
 
-    ApiResponse loadedAvatar = await loadAvatar(userID);
-
-    File? avatar;
-    if (loadedAvatar.code != ResponseCode.success) {
-      material.debugPrint("Avatar could not be loaded!");
-    } else {
-      avatar = loadedAvatar.value as File;
+    if (data["User"].containsKey("profile_picture_hash")) {
+      avatarHash = data["User"]["profile_picture_hash"].toString();
     }
 
-    return ApiResponse(ResponseCode.success, User(userID, name, birthday, role, avatar));
+    ApiResponse loadedAvatar = await loadAvatar(userID, avatarHash);
+    return ApiResponse(ResponseCode.success, User(userID, name, birthday, role, loadedAvatar.value));
   }
 
-  Future<ApiResponse<File>> loadAvatar(final String userID) async {
-    material.debugPrint("Downloading Avatar...");
+  Future<ApiResponse<File>> loadAvatar(final String userID, final String avatarHash) async {
 
-    Response response = await get(Uri.parse("${ApiGateway.apiHost}/user/$userID/avatar"));
+    final directory = await getApplicationDocumentsDirectory();
+    File localAvatar = File('${directory.path}/$userID');
 
-    if (response.statusCode != 200) {
-      return ApiResponse(extractResponseCode(response));
+    if(await _getLocalAvatarHash(userID) != avatarHash || !localAvatar.existsSync()){
+      material.debugPrint("Downloading Avatar for $userID...");
+
+      if(localAvatar.existsSync()) {
+        localAvatar.delete();
+      }
+
+      Response response = await sendRequest("/user/$userID/avatar", RequestType.get, null, null, true);
+
+      if (response.statusCode != 200) {
+        return ApiResponse(extractResponseCode(response));
+      }
+
+      localAvatar.writeAsBytesSync(response.bodyBytes);
+      _addLocalAvatarHash(userID, avatarHash);
+    } else {
+      material.debugPrint("Using local Avatar for $userID...");
     }
 
-    final documentDirectory = await getApplicationDocumentsDirectory();
-
-    File avatar = File(join(documentDirectory.path, '$userID.png'));
-
-    avatar.writeAsBytesSync(response.bodyBytes);
-    return ApiResponse(ResponseCode.success, avatar);
+    return ApiResponse(ResponseCode.success, localAvatar);
   }
 
   Future<ResponseCode> pushAvatarToServer(File avatarImage, final String userID) async {
     MultipartRequest request = MultipartRequest("PUT", Uri.parse("${ApiGateway.apiHost}/user/$userID/avatar"));
 
-    Image? image = decodeImage(File(avatarImage.path).readAsBytesSync());
-    if(image == null) {
-      return ResponseCode.unknown;
-    }
-
-    avatarImage = File(avatarImage.path.replaceAll(basename(avatarImage.path), "out.png"))..writeAsBytesSync(encodePng(image));
-    request.files.add(MultipartFile.fromBytes("avatar", avatarImage.readAsBytesSync(), filename: basename(avatarImage.path), contentType: MediaType("image", "png")));
+    request.files.add(MultipartFile.fromBytes("avatar", avatarImage.readAsBytesSync(), filename: path.basename(avatarImage.path)));
 
     String authToken = await StateController.authenticationController.getSecuredVariable(SecureVariable.authenticationToken);
     if (authToken.isEmpty) {
@@ -147,6 +142,8 @@ class UserApi extends ApiGateway {
       return ResponseCode.success;
     } else if (response.statusCode == 413) {
       return ResponseCode.payloadTooLarge;
+    } else if (response.statusCode == 400) {
+      return ResponseCode.invalidFile;
     }
 
     return ResponseCode.unknown;
@@ -165,5 +162,41 @@ class UserApi extends ApiGateway {
       material.debugPrint(error.toString());
       return ResponseCode.unknown;
     }
+  }
+
+  Future<String?> _getLocalAvatarHash(final String userID) async {
+    final Map<String, String> profilePictureHashMap = await _getLocalAvatarHashMap();
+    return profilePictureHashMap[userID];
+  }
+
+  Future<void> _addLocalAvatarHash(final String userID, final String hash) async {
+    File avatarHashStorage = await _getLocalAvatarHashMapFile();
+
+    final Map<String, String> avatarHashMap = await _getLocalAvatarHashMap();
+    avatarHashMap[userID] = hash;
+
+    await avatarHashStorage.writeAsString(jsonEncode(avatarHashMap));
+  }
+
+  Future<Map<String, String>> _getLocalAvatarHashMap() async {
+    Map<String, String> avatarHashMap = {};
+
+    File avatarHashStorage = await _getLocalAvatarHashMapFile();
+
+    try {
+      final content = await avatarHashStorage.readAsString();
+      Map<String, dynamic> data = jsonDecode(content);
+      avatarHashMap = data.map((key, value) => MapEntry(key, value.toString()));
+    } catch(e) {
+      material.debugPrint(e.toString());
+    }
+
+    return avatarHashMap;
+  }
+
+  Future<File> _getLocalAvatarHashMapFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final localPath = directory.path;
+    return File('$localPath/avatar_hashes.json');
   }
 }

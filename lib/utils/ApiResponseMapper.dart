@@ -98,6 +98,8 @@ class ApiResponseMapper {
         return ResponseCode.invalidDate;
       case "invalid_color":
         return ResponseCode.invalidColor;
+      case "invalid_file":
+        return ResponseCode.invalidFile;
       case "payload_too_large":
         return ResponseCode.payloadTooLarge;
       //-------- Unknown --------//
@@ -156,6 +158,7 @@ enum ResponseCode {
   invalidTitle,
   invalidDate,
   invalidColor,
+  invalidFile,
   payloadTooLarge,
   invalidAction,
 

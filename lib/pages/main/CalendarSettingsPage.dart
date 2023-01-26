@@ -471,6 +471,15 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
                 children: [
                   EventColorsNamesAssigner(
                     colorTexts: _colorLegend,
+                    onColorChange: (oldIndex, newIndex) {
+                      String? text = _colorLegend[oldIndex];
+                      if(text != null) {
+                        setState(() {
+                          _colorLegend.remove(oldIndex);
+                          _colorLegend[newIndex] = text;
+                        });
+                      }
+                    },
                     onColorTextChange: (colorIndex, text) {
                       setState(() {
                         _colorLegend[colorIndex] = text;
@@ -486,7 +495,7 @@ class _CalendarSettingsPageState extends State<CalendarSettingsPage> with Single
                     Divider(thickness: 2, color: ThemeController.activeTheme().headlineColor),
                   ListTile(
                     onTap: () async {
-                      int? color = await PickerDialog.eventColorPickerDialog(initialColor: ThemeController.defaultEventColorIndex);
+                      int? color = await PickerDialog.eventColorPickerDialog(initialColor: ThemeController.defaultEventColorIndex, colorLegend: _colorLegend);
                       if(color == null) {
                         return;
                       }

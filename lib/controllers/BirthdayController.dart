@@ -24,8 +24,6 @@ class BirthdayController {
   Future<ResponseCode> initialize() async {
     _birthdayFile = await _initBirthdayFile();
 
-    debugPrint("init birthday");
-
     ResponseCode loadStateHolidays = await generateRemoteBirthdayList();
     if (loadStateHolidays != ResponseCode.success) {
       return loadStateHolidays;

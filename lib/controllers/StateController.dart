@@ -7,6 +7,7 @@ import 'package:xitem/api/EventApi.dart';
 import 'package:xitem/api/HolidayApi.dart';
 import 'package:xitem/api/NoteApi.dart';
 import 'package:xitem/api/UserApi.dart';
+import 'package:xitem/controllers/AlarmController.dart';
 import 'package:xitem/controllers/AuthenticationController.dart';
 import 'package:xitem/controllers/BirthdayController.dart';
 import 'package:xitem/controllers/HolidayController.dart';
@@ -195,6 +196,8 @@ class StateController {
     if (_appState != AppState.uninitialized) {
       return StartupResponse.alreadyStarted;
     }
+
+    AlarmController.startPeriodic();
 
     debugPrint("Initializing StateController...");
     debugPrint("Checking Api Connection");

@@ -36,7 +36,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   final ImagePicker picker = ImagePicker();
   final ImageCropper cropper = ImageCropper();
-  File? _croppedProfilePicture;
+  File? _pickedProfilePicture;
 
   @override
   void initState() {
@@ -170,7 +170,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     child: GestureDetector(
                       onTap: _changeProfilePicture,
                       child: CircleAvatar(
-                        backgroundImage: _croppedProfilePicture != null ? FileImage(_croppedProfilePicture!) : AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
+                        backgroundImage: _pickedProfilePicture != null ? FileImage(_pickedProfilePicture!) : AvatarImageProvider.get(widget.userController.getAuthenticatedUser().avatar),
                         radius: 80,
                         child: Icon(Icons.add_a_photo, size: 50, color: ThemeController.activeTheme().iconColor),
                       ),
@@ -237,13 +237,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<bool> _saveProfile() async {
     FocusScope.of(context).unfocus();
 
-    if(_croppedProfilePicture != null) {
-      ResponseCode changeAvatar = await widget.userController.changeAvatar(_croppedProfilePicture!);
+    if(_pickedProfilePicture != null) {
+      ResponseCode changeAvatar = await widget.userController.changeAvatar(_pickedProfilePicture!);
       if (changeAvatar != ResponseCode.success) {
         String errorMessage;
         switch (changeAvatar) {
           case ResponseCode.payloadTooLarge:
             errorMessage = "Das angegebene Profilbild ist zu groß!";
+            break;
+          case ResponseCode.invalidFile:
+            errorMessage = "Das angegebene Profilbild hat ein ungültiges Dateiformat. Erlaubt sind PNG, JPEG und GIF Dateien!";
             break;
           default:
             errorMessage = "Es ist ein Fehler während der Übertragung des Profilbildes aufgetreten, bitte versuch es später erneut.";
@@ -321,12 +324,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return;
     }
 
-    File? croppedImage = await _cropImage(pickedImage);
-    if (croppedImage != null) {
-      setState(() {
-        _croppedProfilePicture = croppedImage;
-      });
-    }
+    setState(() {
+      _pickedProfilePicture = File(pickedImage.path);
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -351,27 +351,5 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<XFile?> _pickImage() async {
     return await picker.pickImage(source: ImageSource.gallery);
-  }
-
-  Future<File?> _cropImage(XFile imageToCrop) async {
-    final CroppedFile? croppedFile = await ImageCropper().cropImage(
-      sourcePath: imageToCrop.path,
-      compressFormat: ImageCompressFormat.png,
-      uiSettings: [
-        AndroidUiSettings(toolbarTitle: 'Profilbild anpassen', toolbarColor: Colors.amber, toolbarWidgetColor: Colors.white, initAspectRatio: CropAspectRatioPreset.square, lockAspectRatio: true),
-        IOSUiSettings(
-          title: 'Profilbild anpassen',
-        ),
-      ],
-      aspectRatioPresets: [
-        CropAspectRatioPreset.square,
-      ],
-    );
-
-    if (croppedFile == null) {
-      return null;
-    }
-
-    return File(croppedFile.path);
   }
 }

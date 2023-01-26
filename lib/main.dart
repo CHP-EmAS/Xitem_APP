@@ -11,6 +11,7 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   await Xitem.settingController.initialize();
+  //AlarmController.initialize();
 
   runApp(const Xitem());
 }
@@ -18,7 +19,7 @@ void main() async {
 class Xitem extends StatefulWidget {
   const Xitem({super.key});
 
-  static const String appVersion = "1.3.1";
+  static const String appVersion = "1.4.0";
   static final SettingController settingController = SettingController();
 
   @override
